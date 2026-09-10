@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+.venv*/
+venv/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.benchmarks/
+*.egg-info/
+sessions/logs/
+results/raw/
+runs/
+reports/
+*.sqlite*
