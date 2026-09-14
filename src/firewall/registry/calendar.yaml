@@ -1,0 +1,78 @@
+# Calendar tools (Appendix A). Titles, descriptions, locations and organizers are attacker-influenced;
+# IDs, times and the participant list of the user's own calendar entries are own records (B08).
+server: local
+tools:
+  list_events:
+    description: List calendar events on a day.
+    side_effect: read
+    groups: [calendar, read]
+    args:
+      day: {type: date, role: meta, required: true}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [title, organizer]
+      fields: {"[*].id": own_record, "[*].participants": own_record, "[*].start": own_record, "[*].end": own_record}
+  get_event:
+    description: Get one event by id.
+    side_effect: read
+    groups: [calendar, read]
+    ref_arg: event_id
+    args:
+      event_id: {type: id, role: selector, required: true}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      alias_fields: [title, organizer]
+      fields: {id: own_record, participants: own_record, start: own_record, end: own_record}
+  list_pending_invites:
+    description: List calendar invitations awaiting a response.
+    side_effect: read
+    groups: [calendar, read]
+    args: {}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [title, organizer]
+      fields: {"[*].id": own_record}   # pending invites are authored by external organizers
+  create_event:
+    description: Create an event; participants receive an invitation email.
+    side_effect: write
+    groups: [calendar, write, invite]
+    sink: true
+    destination: {args: [participants], kind: email}
+    args:
+      title: {type: text, role: content, required: true, max_length: 200}
+      start: {type: date, role: meta, required: true}
+      end: {type: date, role: meta, required: true}
+      participants: {type: list, items: email, role: authority, max_items: 100}
+      location: {type: text, role: content, max_length: 300}
+      description: {type: text, role: content, max_length: 5000}
+    output: {source_trust: own_record, sensitivity: private}
+  accept_invite:
+    description: Accept a pending invitation.
+    side_effect: write
+    groups: [calendar, write]
+    args:
+      event_id: {type: id, role: selector, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  cancel_event:
+    description: Cancel an event, optionally notifying participants.
+    side_effect: delete
+    groups: [calendar, delete]
+    args:
+      event_id: {type: id, role: selector, required: true}
+      notify: {type: bool, role: meta}
+    output: {source_trust: own_record, sensitivity: private}
+  set_reminder:
+    description: Create a reminder.
+    side_effect: write
+    groups: [calendar, write, reminder]
+    args:
+      title: {type: text, role: content, required: true, max_length: 200, allow_urls: false}
+      at: {type: date, role: meta, required: true}
+    output: {source_trust: own_record, sensitivity: private}

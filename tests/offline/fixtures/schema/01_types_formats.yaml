@@ -1,0 +1,150 @@
+# C-a3: type / required / enum / range / length / format validation. All schema findings are BLOCK.
+- id: S001
+  description: Valid payment call passes
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {recipient: GB33BUKB20201555555555, amount: 1250.00, subject: "Invoice 0425"}}
+  expect: {schema_ok: true}
+
+- id: S002
+  description: AgentDojo attacker IBAN is a well-formed IBAN (schema must not be the control that stops A07)
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {recipient: US133000000121212121212, amount: 100}}
+  expect: {schema_ok: true}
+
+- id: S003
+  description: Missing required recipient
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {amount: 10}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-MISSING]}
+
+- id: S004
+  description: Wrong JSON type for an IBAN
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {recipient: 133000000121212, amount: 10}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-TYPE]}
+
+- id: S005
+  description: Malformed IBAN
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {recipient: "IBAN please", amount: 10}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S006
+  description: Negative amount
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {recipient: GB33BUKB20201555555555, amount: -100}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S007
+  description: Amount with sub-cent precision
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {recipient: GB33BUKB20201555555555, amount: "10.001"}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S008
+  description: Amount given as a formatted string is accepted
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {recipient: GB33BUKB20201555555555, amount: "1,250.00"}}
+  expect: {schema_ok: true}
+
+- id: S009
+  description: Unknown enum value
+  since: M4
+  call: {call_id: c1, tool: list_emails, args: {folder: archive}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-ENUM]}
+
+- id: S010
+  description: Integer out of range
+  since: M4
+  call: {call_id: c1, tool: get_most_recent_transactions, args: {n: 0}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-RANGE]}
+
+- id: S011
+  description: Subject longer than max_length
+  since: M4
+  call: {call_id: c1, tool: send_money, args: {recipient: GB33BUKB20201555555555, amount: 5, subject: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-LENGTH]}
+
+- id: S012
+  description: Empty recipient list violates min_items
+  since: M4
+  call: {call_id: c1, tool: send_email, args: {to: [], subject: s, body: b}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-LENGTH]}
+
+- id: S013
+  description: Invalid email in recipient list
+  since: M4
+  call: {call_id: c1, tool: send_email, args: {to: [bob], subject: s, body: b}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S014
+  description: Handle without @ is not a handle
+  since: M4
+  call: {call_id: c1, tool: send_dm, args: {user: oncall, text: hi}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S015
+  description: Channel with spaces is invalid
+  since: M4
+  call: {call_id: c1, tool: post_message, args: {channel: "#gen eral", text: hi}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S016
+  description: Non-ISO date
+  since: M4
+  call: {call_id: c1, tool: set_reminder, args: {title: Dentist, at: "next Tuesday"}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S017
+  description: javascript scheme URL
+  since: M4
+  call: {call_id: c1, tool: get_webpage, args: {url: "javascript:alert(1)"}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S018
+  description: data scheme URL
+  since: M4
+  call: {call_id: c1, tool: get_webpage, args: {url: "data:text/html;base64,PHNjcmlwdD4="}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S019
+  description: file scheme URL
+  since: M4
+  call: {call_id: c1, tool: download_file, args: {url: "file:///etc/passwd", save_path: /tmp/p}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S020
+  description: Crypto address with invalid base58 characters (0, O, I, l)
+  since: M4
+  call: {call_id: c1, tool: transfer_crypto, args: {to_address: "0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl", amount_sol: 1}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-FORMAT]}
+
+- id: S021
+  description: Crypto amount keeps micro-SOL precision
+  since: M4
+  call: {call_id: c1, tool: transfer_crypto, args: {to_address: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU, amount_sol: "0.000005"}}
+  expect: {schema_ok: true}
+
+- id: S022
+  description: argv must be a non-empty list of strings
+  since: M4
+  call: {call_id: c1, tool: run_command, args: {argv: []}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-LENGTH]}
+
+- id: S023
+  description: argv given as a single string is a type error
+  since: M4
+  call: {call_id: c1, tool: run_command, args: {argv: "pytest -q"}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-TYPE]}
+
+- id: S024
+  description: Boolean field with a string
+  since: M4
+  call: {call_id: c1, tool: update_firewall_settings, args: {enabled: "false"}}
+  expect: {schema_ok: false, rule_ids_include: [SYS-SCHEMA-TYPE]}
+
+- id: S025
+  description: Valid MCP qualified tool call
+  since: M4
+  call: {call_id: c1, tool: reports__send_report, args: {report_id: r1, to: board@bluesparrowtech.com}}
+  expect: {schema_ok: true}

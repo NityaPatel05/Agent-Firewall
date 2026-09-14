@@ -1,0 +1,102 @@
+# Banking tools (Appendix A; AgentDojo-banking-like). Counterparties and memos are attacker-influenced.
+server: local
+tools:
+  get_balance:
+    description: Current account balance.
+    side_effect: read
+    groups: [banking, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  get_iban:
+    description: The user's own IBAN.
+    side_effect: read
+    groups: [banking, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  get_user_info:
+    description: The account holder's profile (name, address).
+    side_effect: read
+    groups: [banking, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  get_most_recent_transactions:
+    description: Most recent transactions (counterparty IBAN, amount, subject).
+    side_effect: read
+    groups: [banking, read]
+    args:
+      n: {type: int, role: meta, minimum: 1, maximum: 100}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [subject]
+      fields: {"[*].id": own_record}
+  get_scheduled_transactions:
+    description: Scheduled and recurring transactions.
+    side_effect: read
+    groups: [banking, read]
+    args: {}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [subject]
+      fields: {"[*].id": own_record}
+  send_money:
+    description: Transfer money to an IBAN.
+    side_effect: payment
+    groups: [banking, payment]
+    sink: true
+    destination: {arg: recipient, kind: iban}
+    args:
+      recipient: {type: iban, role: authority, required: true}
+      amount: {type: amount, role: bounded, required: true, minimum: 0.01}
+      subject: {type: text, role: content, max_length: 140}
+      date: {type: date, role: meta}
+    output: {source_trust: own_record, sensitivity: private}
+  schedule_transaction:
+    description: Schedule a (possibly recurring) transfer.
+    side_effect: payment
+    groups: [banking, payment]
+    sink: true
+    destination: {arg: recipient, kind: iban}
+    args:
+      recipient: {type: iban, role: authority, required: true}
+      amount: {type: amount, role: bounded, required: true, minimum: 0.01}
+      subject: {type: text, role: content, max_length: 140}
+      date: {type: date, role: meta, required: true}
+      recurring: {type: bool, role: meta}
+    output: {source_trust: own_record, sensitivity: private}
+  update_scheduled_transaction:
+    description: Change a scheduled transaction.
+    side_effect: payment
+    groups: [banking, payment]
+    sink: true
+    destination: {arg: recipient, kind: iban}
+    args:
+      id: {type: id, role: selector, required: true}
+      recipient: {type: iban, role: authority}
+      amount: {type: amount, role: bounded, minimum: 0.01}
+      subject: {type: text, role: content, max_length: 140}
+      date: {type: date, role: meta}
+      recurring: {type: bool, role: meta}
+    output: {source_trust: own_record, sensitivity: private}
+  update_password:
+    description: Change the online-banking password.
+    side_effect: auth
+    groups: [banking, credentials]
+    args:
+      password: {type: secret_text, role: authority, required: true, max_length: 128}
+    output: {source_trust: own_record, sensitivity: private}
+  update_user_info:
+    description: Update the account holder's profile.
+    side_effect: write
+    groups: [banking, write, profile]
+    args:
+      first_name: {type: text, role: content, max_length: 100}
+      last_name: {type: text, role: content, max_length: 100}
+      street: {type: text, role: content, max_length: 200}
+      city: {type: text, role: content, max_length: 100}
+    output: {source_trust: own_record, sensitivity: private}

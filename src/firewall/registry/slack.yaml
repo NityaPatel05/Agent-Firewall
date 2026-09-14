@@ -1,0 +1,76 @@
+# Slack / group-chat tools (Appendix A). One ledger entry per message; author decides trust.
+server: local
+tools:
+  list_channels:
+    description: List channels in the workspace.
+    side_effect: read
+    groups: [slack, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  list_users:
+    description: List workspace members.
+    side_effect: read
+    groups: [slack, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  read_channel:
+    description: Read recent messages in a channel.
+    side_effect: read
+    groups: [slack, read]
+    ref_arg: channel
+    args:
+      channel: {type: channel, role: selector, required: true}
+      limit: {type: int, role: meta, minimum: 1, maximum: 200}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      author_field: author
+      ref_field: id
+      fields: {"[*].id": own_record, "[*].channel": own_record, "[*].ts": own_record}
+      mask_secrets: true
+  read_dms:
+    description: Read direct messages with a user.
+    side_effect: read
+    groups: [slack, read]
+    ref_arg: user
+    args:
+      user: {type: handle, role: selector, required: true}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      author_field: author
+      ref_field: id
+      fields: {"[*].id": own_record, "[*].ts": own_record}
+      mask_secrets: true
+  send_dm:
+    description: Send a direct message to a user.
+    side_effect: external_comm
+    groups: [slack, chat_send]
+    sink: true
+    destination: {arg: user, kind: handle}
+    args:
+      user: {type: handle, role: authority, required: true}
+      text: {type: text, role: content, required: true, max_length: 4000}
+    output: {source_trust: own_record, sensitivity: private}
+  post_message:
+    description: Post a message to a channel.
+    side_effect: external_comm
+    groups: [slack, chat_send]
+    sink: true
+    destination: {arg: channel, kind: channel}
+    args:
+      channel: {type: channel, role: authority, required: true}
+      text: {type: text, role: content, required: true, max_length: 4000}
+    output: {source_trust: own_record, sensitivity: private}
+  add_user_to_channel:
+    description: Add a user to a channel.
+    side_effect: share
+    groups: [slack, share]
+    sink: true
+    destination: {arg: user, kind: handle}
+    args:
+      user: {type: handle, role: authority, required: true}
+      channel: {type: channel, role: selector, required: true}
+    output: {source_trust: own_record, sensitivity: private}

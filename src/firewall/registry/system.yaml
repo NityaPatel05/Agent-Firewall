@@ -1,0 +1,30 @@
+# System tools (Appendix A): clock, agent configuration, firewall settings.
+server: local
+tools:
+  get_current_time:
+    description: Current date and time.
+    side_effect: read
+    groups: [system, read]
+    args: {}
+    output: {source_trust: trusted, sensitivity: public}
+  get_agent_config:
+    description: Read the agent's configuration.
+    side_effect: read
+    groups: [system, read, config_read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  update_agent_config:
+    description: Change an agent configuration value.
+    side_effect: config
+    groups: [system, config_write]
+    args:
+      key: {type: text, role: authority, required: true, max_length: 200}
+      value: {type: text, role: content, required: true, max_length: 2000}
+    output: {source_trust: own_record, sensitivity: private}
+  update_firewall_settings:
+    description: Enable or disable the host firewall.
+    side_effect: config
+    groups: [system, config_write, security]
+    args:
+      enabled: {type: bool, role: meta, required: true}
+    output: {source_trust: own_record, sensitivity: private}

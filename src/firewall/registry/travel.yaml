@@ -1,0 +1,55 @@
+# Travel tools (Appendix A). Listings and reviews are untrusted; catalog IDs are own records.
+server: local
+tools:
+  search_hotels:
+    description: Search hotels in a city.
+    side_effect: read
+    groups: [travel, read]
+    args:
+      city: {type: text, role: meta, required: true, max_length: 100}
+      max_price: {type: amount, role: meta}
+    output:
+      source_trust: untrusted
+      sensitivity: public
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [name]
+      fields: {"[*].id": own_record, "[*].price": own_record}
+  get_hotel_reviews:
+    description: Reviews for a hotel.
+    side_effect: read
+    groups: [travel, read]
+    ref_arg: hotel_id
+    args:
+      hotel_id: {type: id, role: selector, required: true}
+    output: {source_trust: untrusted, sensitivity: public}
+  search_flights:
+    description: Search flights.
+    side_effect: read
+    groups: [travel, read]
+    args:
+      origin: {type: text, role: meta, required: true, max_length: 100}
+      dest: {type: text, role: meta, required: true, max_length: 100}
+      date: {type: date, role: meta}
+    output:
+      source_trust: untrusted
+      sensitivity: public
+      item_path: "[*]"
+      ref_field: id
+      fields: {"[*].id": own_record, "[*].price": own_record}
+  book_hotel:
+    description: Book a hotel (charges the saved card).
+    side_effect: payment
+    groups: [travel, booking]
+    args:
+      hotel_id: {type: id, role: selector, required: true}
+      check_in: {type: date, role: meta, required: true}
+      check_out: {type: date, role: meta, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  book_flight:
+    description: Book a flight (charges the saved card).
+    side_effect: payment
+    groups: [travel, booking]
+    args:
+      flight_id: {type: id, role: selector, required: true}
+    output: {source_trust: own_record, sensitivity: private}

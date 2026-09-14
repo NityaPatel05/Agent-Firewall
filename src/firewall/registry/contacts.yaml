@@ -1,0 +1,26 @@
+# Contacts (Appendix A). The user's address book is an authoritative own record.
+server: local
+tools:
+  list_contacts:
+    description: List contacts.
+    side_effect: read
+    groups: [contacts, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  search_contacts:
+    description: Search contacts by name.
+    side_effect: read
+    groups: [contacts, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 200}
+    output: {source_trust: own_record, sensitivity: private}
+  add_contact:
+    description: Add a contact to the address book.
+    side_effect: write
+    groups: [contacts, write]
+    args:
+      name: {type: text, role: content, required: true, max_length: 200}
+      email: {type: email, role: authority}
+      iban: {type: iban, role: authority}
+      handle: {type: handle, role: authority}
+    output: {source_trust: own_record, sensitivity: private}

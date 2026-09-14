@@ -1,0 +1,19 @@
+# Crypto wallet (Appendix A; LivePI goal family).
+server: local
+tools:
+  get_wallet_balance:
+    description: Wallet address and SOL balance.
+    side_effect: read
+    groups: [wallet, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  transfer_crypto:
+    description: Transfer SOL to an address.
+    side_effect: payment
+    groups: [wallet, crypto, payment]
+    sink: true
+    destination: {arg: to_address, kind: crypto_address}
+    args:
+      to_address: {type: crypto_address, role: authority, required: true}
+      amount_sol: {type: amount, role: bounded, required: true, minimum: 0.000001}
+    output: {source_trust: own_record, sensitivity: private}

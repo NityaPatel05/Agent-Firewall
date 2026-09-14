@@ -1,0 +1,99 @@
+# Email tools (Appendix A). Bodies, senders and subjects are attacker-influenced; IDs are system-generated.
+server: local
+tools:
+  list_emails:
+    description: List emails in a folder (newest first).
+    side_effect: read
+    groups: [email, read]
+    args:
+      folder: {type: enum, role: meta, enum: [inbox, sent, drafts, trash]}
+      unread_only: {type: bool, role: meta}
+      limit: {type: int, role: meta, minimum: 1, maximum: 100}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [sender, sender_name, subject]
+      fields: {"[*].id": own_record}
+  search_emails:
+    description: Search emails by free-text query.
+    side_effect: read
+    groups: [email, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 500}
+      limit: {type: int, role: meta, minimum: 1, maximum: 100}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [sender, sender_name, subject]
+      fields: {"[*].id": own_record}
+  read_email:
+    description: Read one email by id.
+    side_effect: read
+    groups: [email, read]
+    ref_arg: email_id
+    args:
+      email_id: {type: id, role: selector, required: true}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      alias_fields: [sender, sender_name, subject]
+      fields: {id: own_record}
+      mask_secrets: true
+  send_email:
+    description: Send a new email.
+    side_effect: external_comm
+    groups: [email, email_send]
+    sink: true
+    destination: {args: [to, cc, bcc], kind: email}
+    args:
+      to: {type: list, items: email, role: authority, required: true, min_items: 1, max_items: 50}
+      cc: {type: list, items: email, role: authority, max_items: 50}
+      bcc: {type: list, items: email, role: authority, max_items: 50}
+      subject: {type: text, role: content, required: true, max_length: 300}
+      body: {type: text, role: content, required: true, max_length: 20000}
+      attachments: {type: list, items: path, role: content, max_items: 20}
+    output: {source_trust: own_record, sensitivity: private}
+  reply_email:
+    description: Reply to the sender of an email.
+    side_effect: external_comm
+    groups: [email, email_send]
+    sink: true
+    destination: {args: [cc, bcc], kind: email, derived_from: [email_id, sender]}
+    args:
+      email_id: {type: id, role: selector, required: true}
+      body: {type: text, role: content, required: true, max_length: 20000}
+      cc: {type: list, items: email, role: authority, max_items: 50}
+      bcc: {type: list, items: email, role: authority, max_items: 50}
+      attachments: {type: list, items: path, role: content, max_items: 20}
+    output: {source_trust: own_record, sensitivity: private}
+  forward_email:
+    description: Forward an email to recipients.
+    side_effect: external_comm
+    groups: [email, email_send]
+    sink: true
+    destination: {args: [to], kind: email}
+    args:
+      email_id: {type: id, role: selector, required: true, transfers_content: true}
+      to: {type: list, items: email, role: authority, required: true, min_items: 1, max_items: 50}
+      note: {type: text, role: content, max_length: 5000}
+    output: {source_trust: own_record, sensitivity: private}
+  draft_email:
+    description: Save an email draft (does not send).
+    side_effect: write
+    groups: [email, write, draft]
+    args:
+      to: {type: list, items: email, role: content, max_items: 50}
+      subject: {type: text, role: content, required: true, max_length: 300}
+      body: {type: text, role: content, required: true, max_length: 20000}
+    output: {source_trust: own_record, sensitivity: private}
+  delete_email:
+    description: Move an email to trash.
+    side_effect: delete
+    groups: [email, delete]
+    args:
+      email_id: {type: id, role: selector, required: true}
+    output: {source_trust: own_record, sensitivity: private}

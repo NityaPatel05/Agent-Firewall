@@ -1,0 +1,93 @@
+# File tools (Appendix A). Paths in listings are own records; file contents are untrusted.
+server: local
+tools:
+  list_files:
+    description: List files in a directory (recursive).
+    side_effect: read
+    groups: [files, read]
+    args:
+      directory: {type: path, role: selector, required: true}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: path
+      fields: {"[*].path": own_record, "[*].size": own_record, "[*].shared_with": own_record}
+  search_files:
+    description: Search file names and contents.
+    side_effect: read
+    groups: [files, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 500}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: path
+      fields: {"[*].path": own_record}
+  read_file:
+    description: Read a file's content.
+    side_effect: read
+    groups: [files, read]
+    ref_arg: path
+    args:
+      path: {type: path, role: selector, required: true}
+    output: {source_trust: untrusted, sensitivity: private, mask_secrets: true}
+  write_file:
+    description: Create or overwrite a file.
+    side_effect: write
+    groups: [files, write]
+    writes_ref_arg: path
+    args:
+      path: {type: path, role: authority, required: true}
+      content: {type: text, role: content, required: true, max_length: 200000}
+    output: {source_trust: own_record, sensitivity: private}
+  delete_file:
+    description: Delete a file.
+    side_effect: delete
+    groups: [files, delete]
+    args:
+      path: {type: path, role: authority, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  share_file:
+    description: Grant another person access to a file or folder.
+    side_effect: share
+    groups: [files, share]
+    sink: true
+    destination: {args: [grantees], kind: email}
+    args:
+      path: {type: path, role: selector, required: true, transfers_content: true}
+      grantees: {type: list, items: email, role: authority, required: true, min_items: 1, max_items: 50}
+      permission: {type: enum, role: meta, enum: [read, write]}
+    output: {source_trust: own_record, sensitivity: private}
+  zip_files:
+    description: Create a zip archive from files.
+    side_effect: write
+    groups: [files, write]
+    writes_ref_arg: output_path
+    args:
+      paths: {type: list, items: path, role: selector, required: true, min_items: 1, max_items: 500}
+      # A new archive's name is usually chosen by the agent; protected targets are still caught by FILES-PROTECT-001.
+      output_path: {type: path, role: authority, required: true, origin_required: false}
+    output: {source_trust: own_record, sensitivity: private}
+  upload_file:
+    description: Upload a file to a URL (HTTP PUT).
+    side_effect: external_comm
+    groups: [files, upload, web]
+    sink: true
+    destination: {arg: url, kind: url}
+    args:
+      path: {type: path, role: content, required: true}
+      url: {type: url, role: authority, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  download_file:
+    description: Download a URL and save it to a path.
+    side_effect: fetch
+    groups: [files, web, download]
+    sink: true
+    destination: {arg: url, kind: url}
+    writes_ref_arg: save_path
+    args:
+      url: {type: url, role: authority, required: true, origin_required: false}
+      save_path: {type: path, role: authority, required: true}
+    output: {source_trust: untrusted, sensitivity: public}

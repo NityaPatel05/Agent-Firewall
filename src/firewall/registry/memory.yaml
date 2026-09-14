@@ -1,0 +1,26 @@
+# Agent memory (Appendix A). Stored values inherit the session label at write time (resource labels, M6).
+server: local
+tools:
+  save_memory:
+    description: Persist a key/value note for later sessions.
+    side_effect: write
+    groups: [memory, write]
+    writes_ref_arg: key
+    args:
+      key: {type: text, role: selector, required: true, max_length: 100}
+      value: {type: text, role: content, required: true, max_length: 5000}
+    output: {source_trust: own_record, sensitivity: private}
+  recall_memory:
+    description: Read a stored note.
+    side_effect: read
+    groups: [memory, read]
+    ref_arg: key
+    args:
+      key: {type: text, role: selector, required: true, max_length: 100}
+    output: {source_trust: own_record, sensitivity: private}
+  list_memory:
+    description: List stored note keys.
+    side_effect: read
+    groups: [memory, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}

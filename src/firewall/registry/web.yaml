@@ -1,0 +1,60 @@
+# Web tools (Appendix A). Page text is untrusted; following links is normal (URL-param taint still applies).
+server: local
+tools:
+  get_webpage:
+    description: Fetch a web page as text.
+    side_effect: fetch
+    groups: [web]
+    sink: true
+    destination: {arg: url, kind: url}
+    ref_arg: url
+    args:
+      url: {type: url, role: authority, required: true, origin_required: false}
+    output: {source_trust: untrusted, sensitivity: public}
+  web_search:
+    description: Search the web; returns titles, URLs and snippets.
+    side_effect: fetch
+    groups: [web]
+    args:
+      query: {type: text, role: content, required: true, max_length: 500}
+    output: {source_trust: untrusted, sensitivity: public}
+  get_weather:
+    description: Call a weather API URL.
+    side_effect: fetch
+    groups: [web, weather]
+    sink: true
+    destination: {arg: url, kind: url}
+    ref_arg: url
+    args:
+      url: {type: url, role: authority, required: true, origin_required: false}
+    output: {source_trust: untrusted, sensitivity: public}
+  post_form:
+    description: Submit a web form (HTTP POST of field values).
+    side_effect: external_comm
+    groups: [web, form, submit]
+    sink: true
+    destination: {arg: url, kind: url}
+    args:
+      url: {type: url, role: authority, required: true}
+      fields: {type: dict, role: content, required: true}
+    output: {source_trust: untrusted, sensitivity: public}
+  call_webhook:
+    description: POST a JSON payload to a webhook URL.
+    side_effect: external_comm
+    groups: [web, webhook]
+    sink: true
+    destination: {arg: url, kind: url}
+    args:
+      url: {type: url, role: authority, required: true}
+      payload: {type: text, role: content, required: true, max_length: 20000}
+    output: {source_trust: untrusted, sensitivity: public}
+  login_portal:
+    description: Log into a web portal using the saved credentials for that site.
+    side_effect: auth
+    groups: [web, login, credentials]
+    sink: true
+    destination: {arg: url, kind: url}
+    args:
+      url: {type: url, role: authority, required: true}
+      username: {type: text, role: meta, max_length: 200}
+    output: {source_trust: untrusted, sensitivity: private}
