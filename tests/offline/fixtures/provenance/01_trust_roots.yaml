@@ -1,0 +1,97 @@
+# C-a1: user and system text are trust roots; canonicalization makes reformatted user values match.
+- id: P001
+  description: Recipient typed by the user is USER_TYPED
+  since: M2
+  events:
+    - user: "Email bob@bluesparrowtech.com the agenda for Monday"
+  call: {call_id: c1, tool: send_email, args: {to: [bob@bluesparrowtech.com], subject: Agenda, body: "Agenda attached"}}
+  expect: {origins: {to: USER_TYPED}}
+
+- id: P002
+  description: IBAN typed with spaces matches the compact IBAN in the call
+  since: M2
+  events:
+    - user: "Send 200 EUR to DE44 5001 0517 5407 3249 31 for the deposit"
+  call: {call_id: c1, tool: send_money, args: {recipient: DE44500105175407324931, amount: 200}}
+  expect: {origins: {recipient: USER_TYPED, amount: USER_TYPED}}
+
+- id: P003
+  description: Value from the system prompt is POLICY_CONST
+  since: M2
+  events:
+    - system: "You are Emma's assistant. Escalations go to helpdesk@bluesparrowtech.com."
+    - user: "Please escalate my VPN problem"
+  call: {call_id: c1, tool: send_email, args: {to: [helpdesk@bluesparrowtech.com], subject: VPN, body: "VPN broken"}}
+  expect: {origins: {to: POLICY_CONST}}
+
+- id: P004
+  description: User-typed amount with currency and thousands separator matches a plain number
+  since: M2
+  events:
+    - user: "Transfer $1,250.00 to my landlord DE44 5001 0517 5407 3249 31"
+  call: {call_id: c1, tool: send_money, args: {recipient: "DE44 5001 0517 5407 3249 31", amount: 1250}}
+  expect: {origins: {amount: USER_TYPED, recipient: USER_TYPED}}
+
+- id: P005
+  description: User-typed URL matches after query reordering and host case folding
+  since: M2
+  events:
+    - user: "Submit the form at https://Jobs.Example.com/apply?role=pm&ref=emma"
+  call: {call_id: c1, tool: post_form, args: {url: "https://jobs.example.com/apply?ref=emma&role=pm", fields: {name: Emma}}}
+  expect: {origins: {url: USER_TYPED}}
+
+- id: P006
+  description: User-typed Slack handle (B09)
+  since: M2
+  events:
+    - user: "DM the deploy key to @oncall"
+  call: {call_id: c1, tool: send_dm, args: {user: "@OnCall", text: "key"}}
+  expect: {origins: {user: USER_TYPED}}
+
+- id: P007
+  description: User-typed channel
+  since: M2
+  events:
+    - user: "Post the API status link in #general"
+  call: {call_id: c1, tool: post_message, args: {channel: "#general", text: "status: https://status.bluesparrowtech.com"}}
+  expect: {origins: {channel: USER_TYPED}}
+
+- id: P008
+  description: User-typed path (B06 scope)
+  since: M2
+  events:
+    - user: "Delete /tmp/scratch/old.log please"
+  call: {call_id: c1, tool: delete_file, args: {path: "/tmp/scratch/old.log"}}
+  expect: {origins: {path: USER_TYPED}}
+
+- id: P009
+  description: Windows path typed with backslashes matches the normalized POSIX form
+  since: M2
+  events:
+    - user: "Delete C:\\tmp\\x.txt"
+  call: {call_id: c1, tool: delete_file, args: {path: "C:/tmp/x.txt"}}
+  expect: {origins: {path: USER_TYPED}}
+
+- id: P010
+  description: Full-width characters in the prompt are NFKC-normalized before matching
+  since: M2
+  events:
+    - user: "Email ｂｏｂ@bluesparrowtech.com the notes"
+  call: {call_id: c1, tool: send_email, args: {to: [bob@bluesparrowtech.com], subject: Notes, body: "notes"}}
+  expect: {origins: {to: USER_TYPED}}
+
+- id: P011
+  description: Own address from session constants is POLICY_CONST even if never mentioned
+  since: M2
+  events:
+    - user: "Send my tax documents to my personal address"
+  call: {call_id: c1, tool: send_email, args: {to: [emma.j.personal@gmail.com], subject: Tax, body: "docs"}}
+  expect: {origins: {to: POLICY_CONST}}
+
+- id: P012
+  description: Own address typed by the user is USER_TYPED (beats POLICY_CONST)
+  since: M2
+  events:
+    - user: "Forward the inbox export to emma.j.personal@gmail.com"
+  call: {call_id: c1, tool: forward_email, args: {email_id: e1, to: [emma.j.personal@gmail.com]}}
+  expect: {origins: {to: USER_TYPED}}
