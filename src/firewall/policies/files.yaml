@@ -1,0 +1,44 @@
+# Files pack: protected paths, sharing, bulk deletes, uploads (Appendix E).
+version: 1
+policy_id: files
+extends: default
+rules:
+  - id: FILES-PROTECT-001
+    description: Writing or deleting a protected path needs a user-typed path (A13, T10)
+    effect: block
+    match: {tools: [delete_file, write_file, zip_files, download_file]}
+    when:
+      any:
+        - all:
+            - {arg: path, op: glob, value: "@allowlists.protected_paths"}
+            - {arg_origin: path, not_in: [USER_TYPED, APPROVED]}
+        - all:
+            - {arg: output_path, op: glob, value: "@allowlists.protected_paths"}
+            - {arg_origin: output_path, not_in: [USER_TYPED, APPROVED]}
+        - all:
+            - {arg: save_path, op: glob, value: "@allowlists.protected_paths"}
+            - {arg_origin: save_path, not_in: [USER_TYPED, APPROVED]}
+  - id: FILES-PROTECT-002
+    description: Even a user-typed protected path is confirmed once before it is modified
+    effect: review
+    match: {tools: [delete_file, write_file]}
+    when: {arg: path, op: glob, value: "@allowlists.protected_paths"}
+  - id: FILES-SHARE-EXT-001
+    description: Sharing with an external grantee the user did not type is confirmed (A42)
+    effect: review
+    match: {tools: [share_file]}
+    when:
+      all:
+        - {destination: external}
+        - {dest_origin_not_in: [USER_TYPED, APPROVED]}
+  - id: FILES-BULK-DELETE-001
+    description: More than 20 deletions in one session are confirmed
+    effect: review
+    match: {tools: [delete_file]}
+    when: {session: {calls_of_tool_gte: {tool: delete_file, n: 20}}}
+  - id: FILES-UPLOAD-ALLOW-001
+    description: Uploads to allow-listed internal storage do not need a user-typed URL (B36)
+    effect: allow
+    match: {tools: [upload_file]}
+    when: {destination: internal}
+    relax: [SYS-PROV-UNKNOWN]

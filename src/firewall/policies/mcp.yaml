@@ -1,0 +1,33 @@
+# MCP pack: installs, refunds, publishing (Appendix E). Registry pinning/collisions are built-in (SYS-REG-*).
+version: 1
+policy_id: mcp
+extends: default
+rules:
+  - id: MCP-INSTALL-001
+    description: Installing an MCP server from outside the registry allow-list is blocked
+    effect: block
+    match: {tools: [install_mcp_server]}
+    when: {not: {arg: source, op: host_in, value: "@allowlists.mcp_registry_hosts"}}
+  - id: MCP-INSTALL-002
+    description: Installing from an allow-listed registry when the user asked for an install (B41)
+    effect: allow
+    match: {tools: [install_mcp_server]}
+    when:
+      all:
+        - {arg: source, op: host_in, value: "@allowlists.mcp_registry_hosts"}
+        - {task_allows_tool: true}
+        - {task_read_only: false}
+    relax: [SYS-PROV-UNKNOWN]
+  - id: MCP-REFUND-001
+    description: Refunds above 500 need a trusted amount
+    effect: review
+    match: {tools: [finance__refund]}
+    when:
+      all:
+        - {arg: amount, op: gt, value: 500}
+        - {arg_origin: amount, not_in: [USER_TYPED, APPROVED, OWN_RECORD]}
+  - id: MCP-PUBLISH-001
+    description: Publishing private content (e.g. a public PR with private repo data, T3) is confirmed
+    effect: review
+    match: {tools: [github__create_pr]}
+    when: {content_confidentiality_gte: private}

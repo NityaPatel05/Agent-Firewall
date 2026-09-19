@@ -1,0 +1,4 @@
+# Every pack; used by the scenario suite and the default Gateway.
+version: 1
+policy_id: all
+extends: [default, banking, workspace, slack, travel, web, files, mcp, exec, livepi]

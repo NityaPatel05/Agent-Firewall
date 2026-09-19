@@ -1,0 +1,30 @@
+# Exec pack (Appendix E). argv/env/cwd checks are built-in (SYS-EXEC-*, M5); these rules set scope.
+version: 1
+policy_id: exec
+extends: default
+rules:
+  - id: EXEC-TEST-001
+    description: Running the test suite with pytest is allowed when the user asked to run things (B15)
+    effect: allow
+    match: {tools: [run_command]}
+    when:
+      all:
+        - {arg: "argv[0]", op: in, value: [pytest]}
+        - {task_allows_tool: true}
+        - {task_read_only: false}
+  - id: EXEC-TEST-002
+    description: "`python -m pytest` is equivalent to EXEC-TEST-001"
+    effect: allow
+    match: {tools: [run_command]}
+    when:
+      all:
+        - {arg: "argv[0]", op: in, value: [python, python3]}
+        - {arg: "argv[1]", op: eq, value: "-m"}
+        - {arg: "argv[2]", op: eq, value: pytest}
+        - {task_allows_tool: true}
+        - {task_read_only: false}
+  - id: EXEC-SCOPE-001
+    description: Executing commands when the user did not ask to run anything is blocked (A33)
+    effect: block
+    match: {side_effects: [exec]}
+    when: {not: {task_allows_tool: true}}

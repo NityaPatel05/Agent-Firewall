@@ -1,0 +1,26 @@
+# Slack / group-chat pack (Appendix E).
+version: 1
+policy_id: slack
+extends: default
+rules:
+  - id: SLACK-EXT-001
+    description: Messages or invites to users outside the workspace need a user-typed recipient
+    effect: review
+    match: {tools: [send_dm, add_user_to_channel]}
+    when:
+      all:
+        - {destination: external}
+        - {dest_origin_not_in: [USER_TYPED, APPROVED]}
+  - id: SLACK-INVITE-001
+    description: Inviting an outside user of untrusted origin into a channel is blocked
+    effect: block
+    match: {tools: [add_user_to_channel]}
+    when:
+      all:
+        - {destination: external}
+        - {dest_origin_in: [UNTRUSTED_ONLY, UNKNOWN]}
+  - id: SLACK-SECRET-CHANNEL-001
+    description: Posting a secret to a channel (broadcast) is confirmed even when the user asked
+    effect: review
+    match: {tools: [post_message]}
+    when: {secret_in_args: true}

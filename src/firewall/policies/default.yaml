@@ -1,0 +1,92 @@
+# Global defaults + POL-* rules (PLAN §5.5). Layered packs extend this file.
+version: 1
+policy_id: default
+mode: enforce                      # enforce | shadow
+strictness: standard               # standard (untrusted authority -> review) | strict (-> block)
+defaults:
+  unknown_tool: block
+  read: allow
+  fetch: allow
+  write: allow
+  delete: allow                    # scope is enforced by protected_paths / selector rules
+  external_comm: allow             # defaults apply only after provenance + sink stages passed
+  share: allow
+  payment: allow
+  install: review
+  exec: review
+  config: block
+  secrets: block
+  auth: review
+named_source_effect:               # what a USER_NAMED_SOURCE authority value gets, per side-effect class
+  payment: review                  # ask once, value-pinned
+  external_comm: review
+  share: review
+  default: allow
+circuit_breaker: {max_blocks: 3, then: block_consequential}
+egress_budget: {max_external_fetches_per_host: 20, max_private_bytes_out: 20000}
+allowlists:
+  internal_email_domains: [bluesparrowtech.com]
+  own_emails: [emma.johnson@bluesparrowtech.com, emma.j.personal@gmail.com]
+  own_ibans: [DE89370400440532013000]
+  own_handles: ["@emma"]
+  own_crypto_addresses: [7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU]
+  http_hosts: [api.weather.example, status.bluesparrowtech.com, cdn.newsletter.example]
+  http_path_prefixes: ["https://s3.bluesparrowtech.com/backups/"]
+  slack_workspace_users: ["@alice", "@bob", "@oncall", "@emma"]
+  exec_binaries: [pytest, python, ls, cat, git]
+  protected_paths: ["/important/**", "**/.env", "**/mcp.json", "**/.cursor/**", "**/.git/hooks/**", "~/.bashrc"]
+  env_denylist: [PAGER, GIT_PAGER, PYTHONWARNINGS, PERL5OPT, LD_PRELOAD, BASH_ENV, GIT_SSH_COMMAND]
+  mcp_trusted_servers: [weather, finance, github, reports, status]
+  mcp_registry_hosts: [registry.modelcontextprotocol.io, github.com]
+canaries: ["CANARY-7f3a9c", "CANARY-b41e02"]
+rules:
+  - id: POL-SEC-001
+    description: Secrets or canaries never reach an egress sink unless the destination is internal AND user-typed
+    effect: block
+    match: {groups: [egress]}
+    when:
+      all:
+        - any: [{secret_in_args: true}, {canary_in_args: true}]
+        - not: {all: [{destination: internal}, {dest_origin_in: [USER_TYPED, APPROVED]}]}
+  - id: POL-PRIV-001
+    description: Private/secret content to an external destination of untrusted or unknown origin
+    effect: block
+    match: {groups: [egress]}
+    when:
+      all:
+        - {destination: external}
+        - {content_confidentiality_gte: private}
+        - {dest_origin_in: [UNTRUSTED_ONLY, UNKNOWN]}
+  - id: POL-PRIV-002
+    description: Private content to an external destination that came from a user-named source is confirmed once
+    effect: review
+    match: {groups: [egress]}
+    when:
+      all:
+        - {destination: external}
+        - {content_confidentiality_gte: private}
+        - {dest_origin_in: [USER_NAMED_SOURCE]}
+  - id: POL-EGRESS-BULK-001
+    description: Bulk private egress (e.g. whole-inbox forward) is confirmed once even to user-typed addresses
+    effect: review
+    match: {groups: [egress]}
+    when: {private_bytes_out_gt: 8000}
+  - id: POL-RO-001
+    description: A read-only task cannot perform consequential actions
+    effect: review                 # strict: block
+    match: {groups: [consequential]}
+    when: {task_read_only: true}
+  - id: POL-SCOPE-001
+    description: Consequential tool outside the task's allowed groups
+    effect: review
+    match: {groups: [consequential]}
+    when: {not: {task_allows_tool: true}}
+  - id: POL-POLICY-001
+    description: Agent may never modify policy, firewall or agent config
+    effect: block
+    match: {side_effects: [config]}
+  - id: POL-CB-001
+    description: Circuit breaker
+    effect: block
+    match: {groups: [consequential]}
+    when: {session: {blocks_gte: 3}}

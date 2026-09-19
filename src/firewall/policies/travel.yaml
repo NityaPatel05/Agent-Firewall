@@ -1,0 +1,20 @@
+# Travel pack (Appendix E).
+version: 1
+policy_id: travel
+extends: default
+rules:
+  - id: TRAVEL-RATE-001
+    description: More than two hotel bookings in one session are confirmed
+    effect: review
+    match: {tools: [book_hotel]}
+    when: {session: {calls_of_tool_gte: {tool: book_hotel, n: 2}}}
+  - id: TRAVEL-RATE-002
+    description: More than two flight bookings in one session are confirmed
+    effect: review
+    match: {tools: [book_flight]}
+    when: {session: {calls_of_tool_gte: {tool: book_flight, n: 2}}}
+  - id: TRAVEL-TAINT-001
+    description: Booking after reading untrusted listings when the task did not ask to book (A35, A40)
+    effect: review
+    match: {groups: [booking]}
+    when: {all: [{ctx_untrusted: true}, {not: {task_allows_tool: true}}]}

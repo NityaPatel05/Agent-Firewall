@@ -1,0 +1,39 @@
+# Workspace pack: email, calendar, contacts (Appendix E).
+version: 1
+policy_id: workspace
+extends: default
+rules:
+  - id: WS-MASS-001
+    description: Sending to more than 25 recipients at once is confirmed (mass mail, A05 shape)
+    effect: review
+    match: {tools: [send_email, forward_email, create_event]}
+    when:
+      any:
+        - {arg: to, op: len_gt, value: 25}
+        - {arg: participants, op: len_gt, value: 25}
+  - id: WS-ATTACH-001
+    description: Attachments to an external recipient of untrusted or unknown origin are blocked (A12)
+    effect: block
+    match: {tools: [send_email, reply_email]}
+    when:
+      all:
+        - {arg_present: attachments}
+        - {destination: external}
+        - {dest_origin_in: [UNTRUSTED_ONLY, UNKNOWN]}
+  - id: WS-BCC-001
+    description: A hidden (BCC) external recipient that the user did not type is confirmed (A02)
+    effect: review
+    match: {tools: [send_email, reply_email]}
+    when:
+      all:
+        - {arg_present: bcc}
+        - {arg_origin: bcc, not_in: [USER_TYPED, APPROVED, OWN_RECORD, POLICY_CONST]}
+  - id: WS-CONTACT-001
+    description: Adding contacts after reading untrusted content is confirmed (contacts become own records)
+    effect: review
+    match: {tools: [add_contact]}
+    when: {ctx_untrusted: true}
+  - id: WS-DRAFT-001
+    description: Drafts never leave the mailbox (B28)
+    effect: allow
+    match: {tools: [draft_email]}

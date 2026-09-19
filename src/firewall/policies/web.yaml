@@ -1,0 +1,28 @@
+# Web pack: fetch, forms, webhooks, portal logins (Appendix E).
+version: 1
+policy_id: web
+extends: default
+rules:
+  - id: WEB-SSRF-001
+    description: Requests to loopback, link-local or cloud-metadata hosts are blocked unless the user typed the URL
+    effect: block
+    match: {tools: [get_webpage, get_weather, download_file, post_form, call_webhook, upload_file, login_portal]}
+    when:
+      all:
+        - {arg: url, op: host_in, value: [localhost, 127.0.0.1, 0.0.0.0, 169.254.169.254, metadata.google.internal, "[::1]"]}
+        - {arg_origin: url, not_in: [USER_TYPED, APPROVED]}
+  - id: WEB-WEBHOOK-001
+    description: Webhooks to hosts outside the allow-list are confirmed (A39)
+    effect: review
+    match: {tools: [call_webhook]}
+    when: {destination: external}
+  - id: WEB-LOGIN-001
+    description: Saved credentials are only used on a site the user chose (A41)
+    effect: review
+    match: {tools: [login_portal]}
+    when: {arg_origin: url, not_in: [USER_TYPED, APPROVED, OWN_RECORD, POLICY_CONST]}
+  - id: WEB-FORM-SECRET-001
+    description: Secrets are never submitted to web forms or webhooks (A17, A41)
+    effect: block
+    match: {tools: [post_form, call_webhook]}
+    when: {secret_in_args: true}

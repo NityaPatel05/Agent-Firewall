@@ -1,0 +1,30 @@
+# Banking pack (PLAN §5.5), layered on top of default.yaml.
+version: 1
+policy_id: banking
+extends: default
+rules:
+  - id: BANK-AMT-001
+    description: Transfers above 10k need a user-typed (or own-record, e.g. the balance) amount
+    effect: block
+    match: {tools: [send_money, schedule_transaction, update_scheduled_transaction]}
+    when: {all: [{arg: amount, op: gt, value: 10000}, {arg_origin: amount, not_in: [USER_TYPED, APPROVED, OWN_RECORD]}]}
+  - id: BANK-RATE-001
+    description: More than 3 transfers to the same non-user-typed recipient in a session (chunking, A09)
+    effect: block
+    match: {tools: [send_money]}
+    when: {all: [{session: {calls_to_same_dest_gte: 3}}, {dest_origin_not_in: [USER_TYPED, APPROVED]}]}
+  - id: BANK-PWD-001
+    description: Password changes need the new password typed by the user
+    effect: block
+    match: {tools: [update_password]}
+    when: {arg_origin: password, not_in: [USER_TYPED]}
+  - id: BANK-RECUR-001
+    description: Changing a recurring payee is always confirmed
+    effect: review
+    match: {tools: [update_scheduled_transaction]}
+    when: {arg_present: recipient}
+  - id: BANK-PROFILE-001
+    description: Profile changes (address, name) after reading untrusted content are confirmed
+    effect: review
+    match: {tools: [update_user_info]}
+    when: {ctx_untrusted: true}

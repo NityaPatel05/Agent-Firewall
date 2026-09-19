@@ -1,0 +1,880 @@
+{
+  "$defs": {
+    "Allowlists": {
+      "additionalProperties": false,
+      "properties": {
+        "env_denylist": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Env Denylist",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "exec_binaries": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Exec Binaries",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "http_hosts": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Http Hosts",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "http_path_prefixes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Http Path Prefixes",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "internal_email_domains": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Internal Email Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "mcp_registry_hosts": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Mcp Registry Hosts",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "mcp_trusted_servers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Mcp Trusted Servers",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "own_crypto_addresses": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Own Crypto Addresses",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "own_emails": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Own Emails",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "own_handles": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Own Handles",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "own_ibans": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Own Ibans",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "protected_paths": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Protected Paths",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "slack_workspace_users": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Slack Workspace Users",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "title": "Allowlists",
+      "type": "object"
+    },
+    "CircuitBreaker": {
+      "additionalProperties": false,
+      "properties": {
+        "max_blocks": {
+          "default": 3,
+          "title": "Max Blocks",
+          "type": "integer"
+        },
+        "then": {
+          "const": "block_consequential",
+          "default": "block_consequential",
+          "title": "Then",
+          "type": "string"
+        }
+      },
+      "title": "CircuitBreaker",
+      "type": "object"
+    },
+    "Condition": {
+      "additionalProperties": false,
+      "description": "A condition with exactly one head key (see PLAN §5.5 / IMPLEMENTATION_PLAN M3 semantics table).",
+      "properties": {
+        "all": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Condition"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "All"
+        },
+        "any": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Condition"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Any"
+        },
+        "arg": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Arg"
+        },
+        "arg_origin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Arg Origin"
+        },
+        "arg_present": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Arg Present"
+        },
+        "canary_in_args": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Canary In Args"
+        },
+        "content_confidentiality_gte": {
+          "anyOf": [
+            {
+              "enum": [
+                "private",
+                "secret"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Confidentiality Gte"
+        },
+        "ctx_untrusted": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ctx Untrusted"
+        },
+        "dest_origin_in": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/OriginClass"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dest Origin In"
+        },
+        "dest_origin_not_in": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/OriginClass"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dest Origin Not In"
+        },
+        "destination": {
+          "anyOf": [
+            {
+              "enum": [
+                "internal",
+                "external",
+                "own"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Destination"
+        },
+        "detector_flagged": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detector Flagged"
+        },
+        "in": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/OriginClass"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "In"
+        },
+        "not": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Condition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "not_in": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/OriginClass"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Not In"
+        },
+        "op": {
+          "anyOf": [
+            {
+              "enum": [
+                "eq",
+                "ne",
+                "in",
+                "not_in",
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "regex",
+                "glob",
+                "host_in",
+                "domain_in",
+                "len_gt",
+                "contains"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Op"
+        },
+        "private_bytes_out_gt": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Private Bytes Out Gt"
+        },
+        "secret_in_args": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Secret In Args"
+        },
+        "session": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SessionCond"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "task_allows_tool": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Allows Tool"
+        },
+        "task_read_only": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Read Only"
+        },
+        "value": {
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "title": "Condition",
+      "type": "object"
+    },
+    "Defaults": {
+      "additionalProperties": false,
+      "description": "YAML uses flat keys (`unknown_tool`, `read`, `fetch`, …); they are mapped to `per_side_effect`.",
+      "properties": {
+        "per_side_effect": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Verdict"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/SideEffect"
+          },
+          "title": "Per Side Effect",
+          "type": "object"
+        },
+        "unknown_tool": {
+          "$ref": "#/$defs/Verdict",
+          "default": "block"
+        }
+      },
+      "title": "Defaults",
+      "type": "object"
+    },
+    "EgressBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_external_fetches_per_host": {
+          "default": 20,
+          "title": "Max External Fetches Per Host",
+          "type": "integer"
+        },
+        "max_private_bytes_out": {
+          "default": 20000,
+          "title": "Max Private Bytes Out",
+          "type": "integer"
+        },
+        "max_tainted_fetches_per_host": {
+          "default": 3,
+          "title": "Max Tainted Fetches Per Host",
+          "type": "integer"
+        }
+      },
+      "title": "EgressBudget",
+      "type": "object"
+    },
+    "Match": {
+      "additionalProperties": false,
+      "description": "Empty field = wildcard; AND across non-empty fields, OR within a field.",
+      "properties": {
+        "groups": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Groups",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "servers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Servers",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "side_effects": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SideEffect"
+          },
+          "title": "Side Effects",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "tools": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Tools",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "title": "Match",
+      "type": "object"
+    },
+    "OriginClass": {
+      "enum": [
+        "USER_TYPED",
+        "APPROVED",
+        "OWN_RECORD",
+        "POLICY_CONST",
+        "USER_NAMED_SOURCE",
+        "UNTRUSTED_ONLY",
+        "UNKNOWN"
+      ],
+      "title": "OriginClass",
+      "type": "string"
+    },
+    "Rule": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "effect": {
+          "$ref": "#/$defs/Verdict"
+        },
+        "fallback": {
+          "default": "feedback_to_agent",
+          "enum": [
+            "block",
+            "ask_user",
+            "feedback_to_agent"
+          ],
+          "title": "Fallback",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "match": {
+          "$ref": "#/$defs/Match",
+          "default": {
+            "groups": [],
+            "servers": [],
+            "side_effects": [],
+            "tools": []
+          }
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "relax": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Relax",
+          "type": "array"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Condition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "effect"
+      ],
+      "title": "Rule",
+      "type": "object"
+    },
+    "SessionCond": {
+      "additionalProperties": false,
+      "description": "All set fields must hold.",
+      "properties": {
+        "blocks_gte": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blocks Gte"
+        },
+        "calls_of_tool_gte": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolCount"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "calls_to_same_dest_gte": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calls To Same Dest Gte"
+        },
+        "ingested_untrusted": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ingested Untrusted"
+        },
+        "read_private": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Read Private"
+        },
+        "transfer_total_gt": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transfer Total Gt"
+        }
+      },
+      "title": "SessionCond",
+      "type": "object"
+    },
+    "SideEffect": {
+      "enum": [
+        "read",
+        "fetch",
+        "write",
+        "delete",
+        "external_comm",
+        "payment",
+        "share",
+        "exec",
+        "config",
+        "install",
+        "secrets",
+        "auth"
+      ],
+      "title": "SideEffect",
+      "type": "string"
+    },
+    "ToolCount": {
+      "additionalProperties": false,
+      "properties": {
+        "n": {
+          "title": "N",
+          "type": "integer"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "n"
+      ],
+      "title": "ToolCount",
+      "type": "object"
+    },
+    "Verdict": {
+      "enum": [
+        "allow",
+        "review",
+        "block"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "allowlists": {
+      "$ref": "#/$defs/Allowlists",
+      "default": {
+        "env_denylist": [],
+        "exec_binaries": [],
+        "http_hosts": [],
+        "http_path_prefixes": [],
+        "internal_email_domains": [],
+        "mcp_registry_hosts": [],
+        "mcp_trusted_servers": [],
+        "own_crypto_addresses": [],
+        "own_emails": [],
+        "own_handles": [],
+        "own_ibans": [],
+        "protected_paths": [],
+        "slack_workspace_users": []
+      }
+    },
+    "canaries": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Canaries",
+      "type": "array"
+    },
+    "circuit_breaker": {
+      "$ref": "#/$defs/CircuitBreaker",
+      "default": {
+        "max_blocks": 3,
+        "then": "block_consequential"
+      }
+    },
+    "defaults": {
+      "$ref": "#/$defs/Defaults",
+      "default": {
+        "per_side_effect": {
+          "auth": "review",
+          "config": "block",
+          "delete": "allow",
+          "exec": "review",
+          "external_comm": "allow",
+          "fetch": "allow",
+          "install": "review",
+          "payment": "allow",
+          "read": "allow",
+          "secrets": "block",
+          "share": "allow",
+          "write": "allow"
+        },
+        "unknown_tool": "block"
+      }
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "detector_escalation": {
+      "default": false,
+      "title": "Detector Escalation",
+      "type": "boolean"
+    },
+    "egress_budget": {
+      "$ref": "#/$defs/EgressBudget",
+      "default": {
+        "max_external_fetches_per_host": 20,
+        "max_private_bytes_out": 20000,
+        "max_tainted_fetches_per_host": 3
+      }
+    },
+    "extends": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Extends",
+      "type": "array"
+    },
+    "mode": {
+      "default": "enforce",
+      "enum": [
+        "enforce",
+        "shadow"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "named_source_effect": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Verdict"
+      },
+      "title": "Named Source Effect",
+      "type": "object"
+    },
+    "policy_id": {
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "rules": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Rule"
+      },
+      "title": "Rules",
+      "type": "array"
+    },
+    "strictness": {
+      "default": "standard",
+      "enum": [
+        "standard",
+        "strict"
+      ],
+      "title": "Strictness",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "policy_id"
+  ],
+  "title": "Policy",
+  "type": "object"
+}
