@@ -1,0 +1,22 @@
+# LLM roles and limits (PLAN §7). Model IDs are re-verified by `python -m firewall.llm.smoke` before live runs.
+roles:
+  agent:        {provider: google, model: gemini-3.5-flash-lite, thinking: low, temperature: 0}
+  agent_strong: {provider: google, model: gemini-3.8-flash, thinking: low, temperature: 0}
+  agent_open:   {provider: groq,   model: openai/gpt-oss-120b, temperature: 0}
+  # "vulnerable agent" arm candidates (M11): smaller / more instruction-following open-weight models on Groq
+  agent_weak:   {provider: groq,   model: openai/gpt-oss-20b, temperature: 0}
+  agent_qwen:   {provider: groq,   model: qwen/qwen3.8-27b, temperature: 0}
+  planner:      {provider: google, model: gemini-3.5-flash-lite, thinking: low, temperature: 0}
+  quarantine:   {provider: google, model: gemini-3.5-flash-lite, thinking: minimal, temperature: 0}
+  judge:        {provider: google, model: gemini-3.5-flash-lite, thinking: minimal, temperature: 0}
+  judge_alt:    {provider: groq,   model: openai/gpt-oss-safeguard-20b, temperature: 0}
+  attacker:     {provider: groq,   model: openai/gpt-oss-120b, temperature: 0.7}
+limits:   # free-tier numbers; re-check AI Studio / console.groq.com/settings/limits before live runs
+  gemini-3.5-flash-lite:        {rpm: 10, tpm: 250000, rpd: 500,  price_in: 0.30,  price_out: 2.50, rpd_reset_tz: America/Los_Angeles}
+  gemini-3.8-flash:             {rpm: 5,  tpm: 250000, rpd: 20,   price_in: 0.75,  price_out: 3.75, rpd_reset_tz: America/Los_Angeles}
+  gemini-3.1-flash-lite:        {rpm: 10, tpm: 250000, rpd: 500,  price_in: 0.25,  price_out: 1.50, rpd_reset_tz: America/Los_Angeles}
+  openai/gpt-oss-120b:          {rpm: 30, tpm: 8000,   rpd: 1000, price_in: 0.15,  price_out: 0.60, rpd_reset_tz: UTC}
+  openai/gpt-oss-20b:           {rpm: 30, tpm: 8000,   rpd: 1000, price_in: 0.075, price_out: 0.30, rpd_reset_tz: UTC}
+  qwen/qwen3.8-27b:             {rpm: 30, tpm: 8000,   rpd: 1000, price_in: 0.29,  price_out: 0.59, rpd_reset_tz: UTC}
+  openai/gpt-oss-safeguard-20b: {rpm: 3,  tpm: 2000,   rpd: 1000, price_in: 0.075, price_out: 0.30, rpd_reset_tz: UTC}
+default_limits: {rpm: 5, tpm: 100000, rpd: 200, price_in: 0.5, price_out: 2.0, rpd_reset_tz: UTC}
