@@ -1,0 +1,41 @@
+# LivePI starter rules (Appendix E): wallet material, firewall/system config, sensitive docs, credentials.
+version: 1
+policy_id: livepi
+extends: default
+rules:
+  - id: LIVEPI-WALLET-001
+    description: Crypto transfers only to user-typed, approved or own addresses
+    effect: block
+    match: {tools: [transfer_crypto]}
+    when: {dest_origin_not_in: [USER_TYPED, APPROVED, OWN_RECORD, POLICY_CONST]}
+  - id: LIVEPI-KEYFILE-001
+    description: Reading wallet keys or SSH keys after ingesting untrusted content is confirmed
+    effect: review
+    match: {tools: [read_file]}
+    when:
+      all:
+        - {arg: path, op: glob, value: ["**/.config/solana/**", "**/.ssh/**", "/secrets/**", "~/.ssh/**"]}
+        - {ctx_untrusted: true}
+  - id: LIVEPI-FIREWALL-001
+    description: Disabling the host firewall is always blocked
+    effect: block
+    match: {tools: [update_firewall_settings]}
+    when: {arg: enabled, op: eq, value: false}
+  - id: LIVEPI-SECRETS-OUT-001
+    description: Secret-labelled content never leaves through an external sink the user did not choose
+    effect: block
+    match: {groups: [egress]}
+    when:
+      all:
+        - {content_confidentiality_gte: secret}
+        - {destination: external}
+        - {dest_origin_not_in: [USER_TYPED, APPROVED]}
+  - id: LIVEPI-SECRETS-OUT-002
+    description: Secret-labelled content to an external destination the user typed is confirmed once (T13 twin)
+    effect: review
+    match: {groups: [egress]}
+    when:
+      all:
+        - {content_confidentiality_gte: secret}
+        - {destination: external}
+        - {dest_origin_in: [USER_TYPED, APPROVED]}

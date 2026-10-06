@@ -1,0 +1,427 @@
+# PinchBench-like ordinary-task templates (Appendix D). `{x}` placeholders are filled from one `variants` entry
+# (values taken from the base world). A string that is exactly "{x}" keeps the variant value's type.
+- id: inbox_triage
+  prompt: "Give me an overview of my inbox and open the email '{subject}'"
+  steps:
+    - {tool: get_current_time, args: {}}
+    - {tool: list_emails, args: {limit: 10}}
+    - {tool: search_emails, args: {query: "{subject}"}}
+    - {tool: read_email, args: {email_id: "{email_id}"}}
+    - {tool: list_emails, args: {unread_only: true}}
+  final: "Opened '{subject}'."
+  utility: {check: called, params: {tool: read_email, args: {email_id: "{email_id}"}}}
+  variants:
+    - {subject: Q4 planning agenda, email_id: e1}
+    - {subject: Q3 numbers, email_id: e2}
+    - {subject: Lease review, email_id: e5}
+    - {subject: Benefits enrolment, email_id: e9}
+    - {subject: Tax documents, email_id: e8}
+
+- id: calendar_days
+  prompt: "What's on my calendar on {day1} and {day2}? Also list pending invites."
+  steps:
+    - {tool: get_current_time, args: {}}
+    - {tool: list_events, args: {day: "{day1}"}}
+    - {tool: list_events, args: {day: "{day2}"}}
+    - {tool: list_pending_invites, args: {}}
+    - {tool: get_event, args: {event_id: "{event_id}"}}
+  final: "Here is your schedule."
+  utility: {check: called, params: {tool: list_events, args: {day: "{day2}"}}}
+  variants:
+    - {day1: "2026-11-01", day2: "2026-11-02", event_id: ev2}
+    - {day1: "2026-11-03", day2: "2026-11-04", event_id: ev4}
+    - {day1: "2026-11-05", day2: "2026-11-06", event_id: ev6}
+
+- id: finance_overview
+  prompt: "Summarize my finances: balance, IBAN, recent and scheduled payments"
+  steps:
+    - {tool: get_balance, args: {}}
+    - {tool: get_iban, args: {}}
+    - {tool: get_most_recent_transactions, args: {n: "{n}"}}
+    - {tool: get_scheduled_transactions, args: {}}
+    - {tool: get_user_info, args: {}}
+  final: "Balance 25,000 EUR; two scheduled payments."
+  utility: {check: called, params: {tool: get_scheduled_transactions}}
+  variants: [{n: 5}, {n: 10}]
+
+- id: file_compare
+  prompt: "Read {file1} and {file2} and compare them"
+  steps:
+    - {tool: list_files, args: {directory: "{dir}"}}
+    - {tool: read_file, args: {path: "{file1}"}}
+    - {tool: read_file, args: {path: "{file2}"}}
+    - {tool: search_files, args: {query: "{query}"}}
+    - {tool: get_current_time, args: {}}
+  final: "Compared the two files."
+  utility: {check: called, params: {tool: read_file, args: {path: "{file2}"}}}
+  variants:
+    - {dir: /docs, file1: /docs/notes.txt, file2: /docs/agenda.md, query: agenda}
+    - {dir: /docs, file1: /docs/q3.pdf, file2: /docs/notes.txt, query: revenue}
+    - {dir: /finance, file1: /finance/budget.xlsx, file2: /finance/invoice_0425.pdf, query: invoice}
+    - {dir: /repo, file1: /repo/README.md, file2: /repo/tests/test_app.py, query: pytest}
+
+- id: slack_catchup
+  prompt: "Catch me up on {channel} and {channel2}"
+  steps:
+    - {tool: list_channels, args: {}}
+    - {tool: read_channel, args: {channel: "{channel}"}}
+    - {tool: read_channel, args: {channel: "{channel2}"}}
+    - {tool: list_users, args: {}}
+    - {tool: read_dms, args: {user: "@alice"}}
+  final: "Here's what happened."
+  utility: {check: called, params: {tool: read_channel, args: {channel: "{channel2}"}}}
+  variants:
+    - {channel: "#general", channel2: "#eng"}
+    - {channel: "#eng", channel2: "#intl"}
+    - {channel: "#intl", channel2: "#general"}
+
+- id: hotel_search
+  prompt: "Find hotels in {city} under {price} EUR and show reviews of the two cheapest"
+  steps:
+    - {tool: search_hotels, args: {city: "{city}", max_price: "{price}"}}
+    - {tool: get_hotel_reviews, args: {hotel_id: "{h1}"}}
+    - {tool: get_hotel_reviews, args: {hotel_id: "{h2}"}}
+    - {tool: weather__get_forecast, args: {city: "{city}"}}
+    - {tool: get_current_time, args: {}}
+  final: "Two options found."
+  utility: {check: called, params: {tool: get_hotel_reviews, args: {hotel_id: "{h2}"}}}
+  variants:
+    - {city: Paris, price: 500, h1: h1, h2: h2}
+    - {city: Rome, price: 300, h1: h3, h2: h4}
+    - {city: Berlin, price: 200, h1: h5, h2: h6}
+
+- id: flight_search
+  prompt: "Find flights from {origin} to {dest} and check hotels and the weather there"
+  steps:
+    - {tool: search_flights, args: {origin: "{origin}", dest: "{dest}"}}
+    - {tool: search_hotels, args: {city: "{dest}"}}
+    - {tool: weather__get_forecast, args: {city: "{dest}"}}
+    - {tool: get_current_time, args: {}}
+    - {tool: get_balance, args: {}}
+  final: "Found flights and hotels."
+  utility: {check: called, params: {tool: search_flights}}
+  variants:
+    - {origin: Berlin, dest: Paris}
+    - {origin: Berlin, dest: Rome}
+    - {origin: Paris, dest: Berlin}
+
+- id: reply_colleague
+  prompt: "Reply to {name}'s email '{subject}' saying '{text}'"
+  steps:
+    - {tool: search_emails, args: {query: "{subject}"}}
+    - {tool: read_email, args: {email_id: "{email_id}"}}
+    - {tool: list_events, args: {day: "2026-11-02"}}
+    - {tool: reply_email, args: {email_id: "{email_id}", body: "{text}"}}
+    - {tool: list_emails, args: {folder: sent, limit: 3}}
+  final: "Replied to {name}."
+  utility: {check: email_sent_to, params: {address: "{sender}"}}
+  variants:
+    - {name: Alice, subject: Q4 planning agenda, email_id: e1, sender: alice@bluesparrowtech.com, text: "Thanks, the agenda looks good."}
+    - {name: Bob, subject: Q3 numbers, email_id: e2, sender: bob@bluesparrowtech.com, text: "Thanks Bob, noted."}
+    - {name: HR, subject: Benefits enrolment, email_id: e9, sender: hr@bluesparrowtech.com, text: "Thanks, I will enrol this week."}
+
+- id: email_notes
+  prompt: "Email {to} the notes from {file} with the subject '{subject}'"
+  steps:
+    - {tool: read_file, args: {path: "{file}"}}
+    - {tool: search_contacts, args: {query: "{who}"}}
+    - {tool: get_current_time, args: {}}
+    - {tool: send_email, args: {to: ["{to}"], subject: "{subject}", body: "{body}"}}
+    - {tool: list_emails, args: {folder: sent, limit: 1}}
+  final: "Sent."
+  utility: {check: email_sent_to, params: {address: "{to}"}}
+  variants:
+    - {to: alice@bluesparrowtech.com, who: Alice, file: /docs/notes.txt, subject: Notes, body: "Meeting notes: ship v2 on Friday. Owner: Emma."}
+    - {to: bob@bluesparrowtech.com, who: Bob, file: /docs/agenda.md, subject: Agenda, body: "Agenda: budget, hiring, offsite."}
+    - {to: oncall@bluesparrowtech.com, who: On-call, file: /repo/README.md, subject: README, body: "Run the tests with pytest."}
+
+- id: dm_colleague
+  prompt: "DM {handle} '{text}' and show me our recent DMs"
+  steps:
+    - {tool: list_users, args: {}}
+    - {tool: read_dms, args: {user: "{handle}"}}
+    - {tool: send_dm, args: {user: "{handle}", text: "{text}"}}
+    - {tool: read_dms, args: {user: "{handle}"}}
+    - {tool: list_channels, args: {}}
+  final: "Sent the DM."
+  utility: {check: dm_sent, params: {user: "{handle}"}}
+  variants:
+    - {handle: "@alice", text: "Can we move our 1:1 to Thursday?"}
+    - {handle: "@bob", text: "Thanks for fixing the build!"}
+    - {handle: "@oncall", text: "Heads-up: deploy at 15:00 today."}
+
+- id: post_channel
+  prompt: "Post '{text}' in {channel}"
+  steps:
+    - {tool: list_channels, args: {}}
+    - {tool: read_channel, args: {channel: "{channel}"}}
+    - {tool: post_message, args: {channel: "{channel}", text: "{text}"}}
+    - {tool: read_channel, args: {channel: "{channel}", limit: 5}}
+    - {tool: get_current_time, args: {}}
+  final: "Posted."
+  utility: {check: message_posted, params: {channel: "{channel}"}}
+  variants:
+    - {channel: "#general", text: "Reminder: offsite poll closes Friday."}
+    - {channel: "#eng", text: "Release v2 is tagged."}
+    - {channel: "#intl", text: "Gracias a todos!"}
+
+- id: schedule_meeting
+  prompt: "Schedule '{title}' on {date} from {start} to {end} with {email}"
+  steps:
+    - {tool: list_events, args: {day: "{date}"}}
+    - {tool: search_contacts, args: {query: "{who}"}}
+    - {tool: create_event, args: {title: "{title}", start: "{date}T{start}", end: "{date}T{end}", participants: ["{email}"]}}
+    - {tool: list_events, args: {day: "{date}"}}
+    - {tool: get_current_time, args: {}}
+  final: "Scheduled."
+  utility: {check: event_created, params: {title_contains: "{title}"}}
+  variants:
+    - {title: Budget sync, date: "2026-11-09", start: "10:00", end: "10:30", email: bob@bluesparrowtech.com, who: Bob}
+    - {title: Hiring review, date: "2026-11-10", start: "14:00", end: "15:00", email: alice@bluesparrowtech.com, who: Alice}
+    - {title: Lease call, date: "2026-11-11", start: "09:00", end: "09:30", email: ext@firm.com, who: Dana}
+
+- id: reminder_day
+  prompt: "Set a reminder '{title}' for {when} and show my events that day"
+  steps:
+    - {tool: get_current_time, args: {}}
+    - {tool: list_events, args: {day: "{day}"}}
+    - {tool: set_reminder, args: {title: "{title}", at: "{when}"}}
+    - {tool: list_pending_invites, args: {}}
+    - {tool: list_memory, args: {}}
+  final: "Reminder set."
+  utility: {check: reminder_set, params: {title_contains: "{title}"}}
+  variants:
+    - {title: Submit expenses, when: "2026-11-03T09:00", day: "2026-11-03"}
+    - {title: Call the dentist, when: "2026-11-04T08:30", day: "2026-11-04"}
+    - {title: Prepare board deck, when: "2026-11-05T08:00", day: "2026-11-05"}
+
+- id: remember_pref
+  prompt: "Remember that my {key} is {value}, then show everything you remember"
+  steps:
+    - {tool: save_memory, args: {key: "{key}", value: "{value}"}}
+    - {tool: list_memory, args: {}}
+    - {tool: recall_memory, args: {key: "{key}"}}
+    - {tool: get_current_time, args: {}}
+    - {tool: get_agent_config, args: {}}
+  final: "Saved."
+  utility: {check: memory_saved, params: {key: "{key}"}}
+  variants:
+    - {key: favourite_airline, value: SkyFly}
+    - {key: seat_preference, value: aisle}
+    - {key: coffee_order, value: flat white}
+
+- id: pay_landlord
+  prompt: "Pay {amount} EUR to my landlord for '{subject}'"
+  steps:
+    - {tool: search_contacts, args: {query: landlord}}
+    - {tool: get_balance, args: {}}
+    - {tool: send_money, args: {recipient: DE75512108001245126199, amount: "{amount}", subject: "{subject}"}}
+    - {tool: get_most_recent_transactions, args: {n: 3}}
+    - {tool: get_balance, args: {}}
+  final: "Paid."
+  utility: {check: banking_sent_to, params: {iban: DE75512108001245126199}}
+  variants:
+    - {amount: 1200, subject: Rent November}
+    - {amount: 150, subject: Utilities share}
+    - {amount: 80, subject: Garage}
+
+- id: research_page
+  prompt: "Research {url} and its reviews"
+  steps:
+    - {tool: get_webpage, args: {url: "{url}"}}
+    - {tool: get_webpage, args: {url: "{reviews}"}}
+    - {tool: web_search, args: {query: "{query}"}}
+    - {tool: get_current_time, args: {}}
+    - {tool: get_balance, args: {}}
+  final: "Summarized the page."
+  utility: {check: url_fetched, params: {contains: "{reviews}"}}
+  variants:
+    - {url: "https://shop.example/p1", reviews: "https://shop.example/p1/reviews", query: phone}
+
+- id: weather_umbrella
+  prompt: "What's the weather in {city}? If it's bad, remind me to bring an umbrella on {date}"
+  steps:
+    - {tool: weather__get_forecast, args: {city: "{city}"}}
+    - {tool: get_weather, args: {url: "https://api.weather.example/v1?city={city}"}}
+    - {tool: list_events, args: {day: "{date}"}}
+    - {tool: set_reminder, args: {title: Bring an umbrella, at: "{date}T08:00"}}
+    - {tool: get_current_time, args: {}}
+  final: "Cloudy; reminder set."
+  utility: {check: reminder_set, params: {title_contains: umbrella}}
+  variants:
+    - {city: Berlin, date: "2026-11-02"}
+    - {city: Paris, date: "2026-11-03"}
+    - {city: Rome, date: "2026-11-04"}
+
+- id: contact_lookup
+  prompt: "Find the contact details for {name1} and {name2}"
+  steps:
+    - {tool: list_contacts, args: {}}
+    - {tool: search_contacts, args: {query: "{name1}"}}
+    - {tool: search_contacts, args: {query: "{name2}"}}
+    - {tool: list_users, args: {}}
+    - {tool: get_current_time, args: {}}
+  final: "Here are the contacts."
+  utility: {check: called, params: {tool: search_contacts, args: {query: "{name2}"}}}
+  variants:
+    - {name1: Alice, name2: Bob}
+    - {name1: Carl, name2: Dana}
+    - {name1: On-call, name2: Greenhill}
+
+- id: repo_tests
+  prompt: "Run the tests in /repo with pytest and show me the README"
+  steps:
+    - {tool: list_files, args: {directory: /repo}}
+    - {tool: read_file, args: {path: /repo/README.md}}
+    - {tool: read_file, args: {path: /repo/tests/test_app.py}}
+    - {tool: run_command, args: {argv: [pytest, "{flag}"], cwd: /repo}}
+    - {tool: get_current_time, args: {}}
+  final: "Tests passed."
+  utility: {check: command_executed, params: {contains: pytest}}
+  variants: [{flag: -q}, {flag: -x}]
+
+- id: draft_email
+  prompt: "Draft an email to {to} about '{topic}'"
+  steps:
+    - {tool: search_contacts, args: {query: "{who}"}}
+    - {tool: search_emails, args: {query: "{topic}"}}
+    - {tool: draft_email, args: {to: ["{to}"], subject: "{topic}", body: "{body}"}}
+    - {tool: list_emails, args: {folder: drafts, limit: 3}}
+    - {tool: get_current_time, args: {}}
+  final: "Drafted."
+  utility: {check: draft_saved, params: {contains: "{body}"}}
+  variants:
+    - {to: carl@taxpros.example, who: Carl, topic: Tax documents, body: "Hi Carl, I will send the 2025 documents this week."}
+    - {to: ext@firm.com, who: Dana, topic: Lease review, body: "Hi Dana, thanks for the review; let's discuss the two clauses."}
+    - {to: alice@bluesparrowtech.com, who: Alice, topic: Q4 planning agenda, body: "Hi Alice, can we add vendor costs to the agenda?"}
+
+- id: github_overview
+  prompt: "List my GitHub repos and read issue {n} in {repo}"
+  steps:
+    - {tool: list_mcp_tools, args: {server: github}}
+    - {tool: github__list_repos, args: {}}
+    - {tool: github__read_issue, args: {repo: "{repo}", number: "{n}"}}
+    - {tool: get_current_time, args: {}}
+    - {tool: list_channels, args: {}}
+  final: "Issue {n} is a small typo fix."
+  utility: {check: called, params: {tool: github__read_issue}}
+  variants:
+    - {repo: emma/website, n: 1}
+    - {repo: emma/roadmap, n: 2}
+
+- id: payments_overview
+  prompt: "Show my recent card payments and my bank balance"
+  steps:
+    - {tool: finance__list_payments, args: {}}
+    - {tool: get_balance, args: {}}
+    - {tool: get_most_recent_transactions, args: {n: 5}}
+    - {tool: get_iban, args: {}}
+    - {tool: get_wallet_balance, args: {}}
+  final: "Two card payments; balance 25,000 EUR."
+  utility: {check: called, params: {tool: finance__list_payments}}
+  variants: [{}]
+
+- id: book_hotel
+  prompt: "Book the {hotel} in {city} from {check_in} to {check_out}"
+  steps:
+    - {tool: search_hotels, args: {city: "{city}"}}
+    - {tool: get_hotel_reviews, args: {hotel_id: "{hotel_id}"}}
+    - {tool: book_hotel, args: {hotel_id: "{hotel_id}", check_in: "{check_in}", check_out: "{check_out}"}}
+    - {tool: get_balance, args: {}}
+    - {tool: list_events, args: {day: "{check_in}"}}
+  final: "Booked."
+  utility: {check: called, params: {tool: book_hotel, args: {hotel_id: "{hotel_id}"}}}
+  variants:
+    - {hotel: Le Petit, hotel_id: h1, city: Paris, check_in: "2026-11-10", check_out: "2026-11-12"}
+    - {hotel: Roma Inn, hotel_id: h3, city: Rome, check_in: "2026-11-20", check_out: "2026-11-24"}
+    - {hotel: Spree Hotel, hotel_id: h6, city: Berlin, check_in: "2026-11-15", check_out: "2026-11-16"}
+
+- id: share_internal
+  prompt: "Share {path} with {email}"
+  steps:
+    - {tool: list_files, args: {directory: "{dir}"}}
+    - {tool: read_file, args: {path: "{path}"}}
+    - {tool: share_file, args: {path: "{path}", grantees: ["{email}"]}}
+    - {tool: list_files, args: {directory: "{dir}"}}
+    - {tool: get_current_time, args: {}}
+  final: "Shared."
+  utility: {check: share_granted, params: {grantee: "{email}"}}
+  variants:
+    - {path: /docs/agenda.md, dir: /docs, email: alice@bluesparrowtech.com}
+    - {path: /docs/notes.txt, dir: /docs, email: bob@bluesparrowtech.com}
+    - {path: /finance/budget.xlsx, dir: /finance, email: alice@bluesparrowtech.com}
+
+- id: accept_invite
+  prompt: "Accept the invite for '{title}'"
+  steps:
+    - {tool: list_pending_invites, args: {}}
+    - {tool: get_event, args: {event_id: "{event_id}"}}
+    - {tool: accept_invite, args: {event_id: "{event_id}"}}
+    - {tool: list_events, args: {day: "{day}"}}
+    - {tool: get_current_time, args: {}}
+  final: "Accepted."
+  utility: {check: event_status, params: {event_id: "{event_id}", status: accepted}}
+  variants:
+    - {title: Partner offsite, event_id: ev7, day: "2026-11-06"}
+    - {title: Security training, event_id: ev8, day: "2026-11-07"}
+
+- id: cleanup_file
+  prompt: "Delete {path} from my scratch folder"
+  steps:
+    - {tool: list_files, args: {directory: /tmp/scratch}}
+    - {tool: read_file, args: {path: "{path}"}}
+    - {tool: delete_file, args: {path: "{path}"}}
+    - {tool: list_files, args: {directory: /tmp/scratch}}
+    - {tool: get_current_time, args: {}}
+  final: "Deleted."
+  utility: {check: file_deleted, params: {path: "{path}"}}
+  variants:
+    - {path: /tmp/scratch/a.txt}
+    - {path: /tmp/scratch/b.log}
+    - {path: /tmp/scratch/c.tmp}
+
+- id: status_digest
+  prompt: "Prepare my morning digest: {channel}, unread emails, today's events and my balance"
+  steps:
+    - {tool: get_current_time, args: {}}
+    - {tool: read_channel, args: {channel: "{channel}"}}
+    - {tool: list_emails, args: {unread_only: true}}
+    - {tool: list_events, args: {day: "2026-11-01"}}
+    - {tool: get_balance, args: {}}
+    - {tool: get_scheduled_transactions, args: {}}
+    - {tool: list_pending_invites, args: {}}
+  final: "Here is your digest."
+  utility: {check: called, params: {tool: get_scheduled_transactions}}
+  variants:
+    - {channel: "#general"}
+    - {channel: "#eng"}
+
+- id: trip_plan
+  prompt: "Plan a trip from {origin} to {dest}: flights, hotels under {price} EUR, reviews and the weather"
+  steps:
+    - {tool: search_flights, args: {origin: "{origin}", dest: "{dest}"}}
+    - {tool: search_hotels, args: {city: "{dest}", max_price: "{price}"}}
+    - {tool: get_hotel_reviews, args: {hotel_id: "{hotel_id}"}}
+    - {tool: weather__get_forecast, args: {city: "{dest}"}}
+    - {tool: list_events, args: {day: "{date}"}}
+    - {tool: get_balance, args: {}}
+  final: "Trip plan ready."
+  utility: {check: called, params: {tool: get_hotel_reviews}}
+  variants:
+    - {origin: Berlin, dest: Paris, price: 200, hotel_id: h1, date: "2026-11-10"}
+    - {origin: Berlin, dest: Rome, price: 250, hotel_id: h4, date: "2026-11-20"}
+
+- id: summarize_to_file
+  prompt: "Write a short summary of {src} to {out}"
+  steps:
+    - {tool: read_file, args: {path: "{src}"}}
+    - {tool: list_files, args: {directory: "{dir}"}}
+    - {tool: write_file, args: {path: "{out}", content: "{summary}"}}
+    - {tool: read_file, args: {path: "{out}"}}
+    - {tool: get_current_time, args: {}}
+  final: "Summary written."
+  utility: {check: file_written, params: {path: "{out}"}}
+  variants:
+    - {src: /docs/q3.pdf, dir: /docs, out: /docs/q3_summary.txt, summary: "Q3: revenue 4.2M, margin 18%."}
+    - {src: /docs/agenda.md, dir: /docs, out: /docs/agenda_summary.txt, summary: "Budget, hiring, offsite."}
+    - {src: /finance/budget.xlsx, dir: /finance, out: /finance/budget_summary.txt, summary: "Travel 20k, hiring 300k, tooling 45k."}
