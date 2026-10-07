@@ -1,0 +1,211 @@
+# AgentDojo v1.2.2 workspace suite (Appendix G). Email bodies, event descriptions and file contents are untrusted;
+# ids, contacts and the user's own calendar participants are own records. Times are free-form `text` meta.
+server: local
+tools:
+  send_email:
+    description: Sends an email.
+    side_effect: external_comm
+    groups: [email, email_send]
+    sink: true
+    destination: {args: [recipients, cc, bcc], kind: email}
+    args:
+      recipients: {type: list, items: email, role: authority, required: true, min_items: 1, max_items: 100}
+      subject: {type: text, role: content, required: true, max_length: 2000}
+      body: {type: text, role: content, required: true, max_length: 50000}
+      attachments: {type: list, items: dict, role: content, max_items: 50}
+      cc: {type: list, items: email, role: authority, max_items: 100}
+      bcc: {type: list, items: email, role: authority, max_items: 100}
+    output: {source_trust: own_record, sensitivity: private}
+  delete_email:
+    description: Deletes the email with the given id.
+    side_effect: delete
+    groups: [email, delete]
+    args:
+      email_id: {type: id, role: selector, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  get_unread_emails:
+    description: Unread emails.
+    side_effect: read
+    groups: [email, read]
+    args: {}
+    output: &emails
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id_
+      alias_fields: [subject]
+      fields: {"[*].id_": own_record}
+  get_sent_emails:
+    description: Sent emails.
+    side_effect: read
+    groups: [email, read]
+    args: {}
+    output: *emails
+  get_received_emails:
+    description: Received emails.
+    side_effect: read
+    groups: [email, read]
+    args: {}
+    output: *emails
+  get_draft_emails:
+    description: Draft emails.
+    side_effect: read
+    groups: [email, read]
+    args: {}
+    output: *emails
+  search_emails:
+    description: Search emails.
+    side_effect: read
+    groups: [email, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 500}
+      sender: {type: email, role: meta}
+    output: *emails
+  search_contacts_by_name:
+    description: Find contacts by name.
+    side_effect: read
+    groups: [contacts, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 500}
+    output: {source_trust: own_record, sensitivity: private}
+  search_contacts_by_email:
+    description: Find contacts by email.
+    side_effect: read
+    groups: [contacts, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 500}
+    output: {source_trust: own_record, sensitivity: private}
+  get_current_day:
+    description: Current day.
+    side_effect: read
+    groups: [read, system]
+    args: {}
+    output: {source_trust: trusted, sensitivity: public}
+  search_calendar_events:
+    description: Search calendar events.
+    side_effect: read
+    groups: [calendar, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 500}
+      date: {type: text, role: meta, max_length: 40}
+    output: &events
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id_
+      alias_fields: [title]
+      fields: {"[*].id_": own_record, "[*].participants": own_record, "[*].start_time": own_record, "[*].end_time": own_record}
+  get_day_calendar_events:
+    description: Events of a day.
+    side_effect: read
+    groups: [calendar, read]
+    args:
+      day: {type: text, role: meta, required: true, max_length: 40}
+    output: *events
+  create_calendar_event:
+    description: Create a calendar event.
+    side_effect: write
+    groups: [calendar, invite, write]
+    sink: true
+    destination: {arg: participants, kind: email}
+    args:
+      title: {type: text, role: content, required: true, max_length: 1000}
+      start_time: {type: text, role: meta, required: true, max_length: 40}
+      end_time: {type: text, role: meta, required: true, max_length: 40}
+      description: {type: text, role: content, max_length: 10000}
+      participants: {type: list, items: email, role: authority, max_items: 100}
+      location: {type: text, role: content, max_length: 1000}
+    output: {source_trust: own_record, sensitivity: private}
+  cancel_calendar_event:
+    description: Cancel an event.
+    side_effect: delete
+    groups: [calendar, delete]
+    args:
+      event_id: {type: id, role: selector, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  reschedule_calendar_event:
+    description: Reschedule an event.
+    side_effect: write
+    groups: [calendar, write]
+    args:
+      event_id: {type: id, role: selector, required: true}
+      new_start_time: {type: text, role: meta, required: true, max_length: 40}
+      new_end_time: {type: text, role: meta, max_length: 40}
+    output: {source_trust: own_record, sensitivity: private}
+  add_calendar_event_participants:
+    description: Add participants to an event.
+    side_effect: share
+    groups: [calendar, invite, share]
+    sink: true
+    destination: {arg: participants, kind: email}
+    args:
+      event_id: {type: id, role: selector, required: true}
+      participants: {type: list, items: email, role: authority, required: true, min_items: 1, max_items: 100}
+    output: {source_trust: own_record, sensitivity: private}
+  append_to_file:
+    description: Append content to a file.
+    side_effect: write
+    groups: [files, write]
+    args:
+      file_id: {type: id, role: selector, required: true}
+      content: {type: text, role: content, required: true, max_length: 50000}
+    output: {source_trust: untrusted, sensitivity: private}
+  search_files_by_filename:
+    description: Get files by filename.
+    side_effect: read
+    groups: [files, read]
+    args:
+      filename: {type: text, role: meta, required: true, max_length: 500}
+    output: &files
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id_
+      alias_fields: [filename]
+      fields: {"[*].id_": own_record, "[*].filename": own_record, "[*].owner": own_record, "[*].shared_with": own_record}
+  create_file:
+    description: Create a file.
+    side_effect: write
+    groups: [files, write]
+    args:
+      filename: {type: text, role: authority, required: true, origin_required: false, max_length: 500}
+      content: {type: text, role: content, required: true, max_length: 50000}
+    output: {source_trust: own_record, sensitivity: private}
+  delete_file:
+    description: Delete a file.
+    side_effect: delete
+    groups: [files, delete]
+    args:
+      file_id: {type: id, role: selector, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  get_file_by_id:
+    description: Get a file by id.
+    side_effect: read
+    groups: [files, read]
+    args:
+      file_id: {type: id, role: selector, required: true}
+    output: {source_trust: untrusted, sensitivity: private, ref_field: id_, alias_fields: [filename], fields: {id_: own_record, filename: own_record}}
+  list_files:
+    description: All files.
+    side_effect: read
+    groups: [files, read]
+    args: {}
+    output: *files
+  share_file:
+    description: Share a file with a user.
+    side_effect: share
+    groups: [files, share]
+    sink: true
+    destination: {arg: email, kind: email}
+    args:
+      file_id: {type: id, role: selector, required: true, transfers_content: true}
+      email: {type: email, role: authority, required: true}
+      permission: {type: text, role: meta, required: true, max_length: 10}
+    output: {source_trust: own_record, sensitivity: private}
+  search_files:
+    description: Search files by content.
+    side_effect: read
+    groups: [files, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 500}
+    output: *files

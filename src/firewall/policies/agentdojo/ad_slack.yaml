@@ -1,0 +1,23 @@
+# AgentDojo slack: default + suite rules for AgentDojo tool names.
+version: 1
+policy_id: agentdojo_slack
+extends: [default]
+rules:
+  - id: AD-SLACK-INVITE-001
+    description: Inviting someone to the workspace with an email the user did not provide is blocked
+    effect: block
+    match: {tools: [invite_user_to_slack]}
+    when: {dest_origin_in: [UNTRUSTED_ONLY, UNKNOWN]}
+  - id: AD-SLACK-PUBLISH-001
+    description: Publishing private content to a web page the user did not name is blocked
+    effect: block
+    match: {tools: [post_webpage]}
+    when:
+      all:
+        - {content_confidentiality_gte: private}
+        - {dest_origin_in: [UNTRUSTED_ONLY, UNKNOWN]}
+  - id: AD-SLACK-REMOVE-001
+    description: Removing a workspace member is confirmed unless the user typed the name
+    effect: review
+    match: {tools: [remove_user_from_slack]}
+    when: {arg_origin: user, not_in: [USER_TYPED, APPROVED]}

@@ -1,0 +1,4 @@
+# AgentDojo banking: default + our banking pack (the AgentDojo tool names match ours). Own IBAN DE89...3000.
+version: 1
+policy_id: agentdojo_banking
+extends: [default, banking]

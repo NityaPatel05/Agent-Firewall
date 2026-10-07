@@ -1,0 +1,142 @@
+# AgentDojo v1.2.2 travel suite (Appendix G). Reviews/descriptions are untrusted; names of hotels, restaurants
+# and car-rental companies chosen for a reservation are authority values (the injection goal is a reservation).
+server: local
+tools:
+  get_user_information:
+    description: The user's information.
+    side_effect: read
+    groups: [travel, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  get_all_hotels_in_city: &city_lookup
+    description: Lookup by city.
+    side_effect: read
+    groups: [travel, read]
+    args:
+      city: {type: text, role: meta, required: true, max_length: 200}
+    output: {source_trust: untrusted, sensitivity: public}
+  get_all_restaurants_in_city: *city_lookup
+  get_all_car_rental_companies_in_city: *city_lookup
+  get_hotels_prices: &names_lookup
+    description: Lookup by names.
+    side_effect: read
+    groups: [travel, read]
+    args:
+      hotel_names: {type: list, items: text, role: meta, required: true, max_items: 100}
+    output: {source_trust: untrusted, sensitivity: public}
+  get_rating_reviews_for_hotels: *names_lookup
+  get_hotels_address:
+    description: Hotel address.
+    side_effect: read
+    groups: [travel, read]
+    args:
+      hotel_name: {type: text, role: meta, required: true, max_length: 200}
+    output: {source_trust: untrusted, sensitivity: public}
+  get_cuisine_type_for_restaurants: &rest_lookup
+    description: Lookup by restaurant names.
+    side_effect: read
+    groups: [travel, read]
+    args:
+      restaurant_names: {type: list, items: text, role: meta, required: true, max_items: 100}
+    output: {source_trust: untrusted, sensitivity: public}
+  get_restaurants_address: *rest_lookup
+  get_rating_reviews_for_restaurants: *rest_lookup
+  get_dietary_restrictions_for_all_restaurants: *rest_lookup
+  get_contact_information_for_restaurants: *rest_lookup
+  get_price_for_restaurants: *rest_lookup
+  check_restaurant_opening_hours: *rest_lookup
+  get_car_types_available: &car_lookup
+    description: Lookup by company names.
+    side_effect: read
+    groups: [travel, read]
+    args:
+      company_name: {type: list, items: text, role: meta, required: true, max_items: 100}
+    output: {source_trust: untrusted, sensitivity: public}
+  get_rating_reviews_for_car_rental: *car_lookup
+  get_car_fuel_options: *car_lookup
+  get_car_rental_address: *car_lookup
+  get_car_price_per_day: *car_lookup
+  get_flight_information:
+    description: Flights between two cities.
+    side_effect: read
+    groups: [travel, read]
+    args:
+      departure_city: {type: text, role: meta, required: true, max_length: 200}
+      arrival_city: {type: text, role: meta, required: true, max_length: 200}
+    output: {source_trust: untrusted, sensitivity: public}
+  create_calendar_event:
+    description: Create a calendar event.
+    side_effect: write
+    groups: [calendar, invite, write]
+    sink: true
+    destination: {arg: participants, kind: email}
+    args:
+      title: {type: text, role: content, required: true, max_length: 1000}
+      start_time: {type: text, role: meta, required: true, max_length: 40}
+      end_time: {type: text, role: meta, required: true, max_length: 40}
+      description: {type: text, role: content, max_length: 10000}
+      participants: {type: list, items: email, role: authority, max_items: 100}
+      location: {type: text, role: content, max_length: 1000}
+    output: {source_trust: own_record, sensitivity: private}
+  search_calendar_events:
+    description: Search calendar events.
+    side_effect: read
+    groups: [calendar, read]
+    args:
+      query: {type: text, role: meta, required: true, max_length: 500}
+      date: {type: text, role: meta, max_length: 40}
+    output: {source_trust: untrusted, sensitivity: private}
+  get_day_calendar_events:
+    description: Events of a day.
+    side_effect: read
+    groups: [calendar, read]
+    args:
+      day: {type: text, role: meta, required: true, max_length: 40}
+    output: {source_trust: untrusted, sensitivity: private}
+  cancel_calendar_event:
+    description: Cancel an event.
+    side_effect: delete
+    groups: [calendar, delete]
+    args:
+      event_id: {type: id, role: selector, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  reserve_hotel:
+    description: Reserve a hotel.
+    side_effect: payment
+    groups: [booking, travel]
+    args:
+      hotel: {type: text, role: authority, required: true, max_length: 200}
+      start_day: {type: text, role: meta, required: true, max_length: 40}
+      end_day: {type: text, role: meta, required: true, max_length: 40}
+    output: {source_trust: own_record, sensitivity: private}
+  reserve_car_rental:
+    description: Reserve a car rental.
+    side_effect: payment
+    groups: [booking, travel]
+    args:
+      company: {type: text, role: authority, required: true, max_length: 200}
+      start_time: {type: text, role: meta, required: true, max_length: 40}
+      end_time: {type: text, role: meta, max_length: 40}
+    output: {source_trust: own_record, sensitivity: private}
+  reserve_restaurant:
+    description: Reserve a restaurant.
+    side_effect: payment
+    groups: [booking, travel]
+    args:
+      restaurant: {type: text, role: authority, required: true, max_length: 200}
+      start_time: {type: text, role: meta, required: true, max_length: 40}
+    output: {source_trust: own_record, sensitivity: private}
+  send_email:
+    description: Sends an email.
+    side_effect: external_comm
+    groups: [email, email_send]
+    sink: true
+    destination: {args: [recipients, cc, bcc], kind: email}
+    args:
+      recipients: {type: list, items: email, role: authority, required: true, min_items: 1, max_items: 100}
+      subject: {type: text, role: content, required: true, max_length: 2000}
+      body: {type: text, role: content, required: true, max_length: 50000}
+      attachments: {type: list, items: dict, role: content, max_items: 50}
+      cc: {type: list, items: email, role: authority, max_items: 100}
+      bcc: {type: list, items: email, role: authority, max_items: 100}
+    output: {source_trust: own_record, sensitivity: private}

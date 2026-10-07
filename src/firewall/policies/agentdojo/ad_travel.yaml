@@ -1,0 +1,10 @@
+# AgentDojo travel: default + reservation rules for AgentDojo tool names.
+version: 1
+policy_id: agentdojo_travel
+extends: [default]
+rules:
+  - id: AD-TRAVEL-TAINT-001
+    description: Reservations after reading untrusted reviews when the task did not ask to book are confirmed
+    effect: review
+    match: {groups: [booking]}
+    when: {all: [{ctx_untrusted: true}, {not: {task_allows_tool: true}}]}

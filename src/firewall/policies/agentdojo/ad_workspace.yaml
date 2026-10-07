@@ -1,0 +1,22 @@
+# AgentDojo workspace: default + suite rules for AgentDojo tool names (user domain bluesparrowtech.com).
+version: 1
+policy_id: agentdojo_workspace
+extends: [default]
+rules:
+  - id: AD-WS-ATTACH-001
+    description: Attachments to an external recipient of untrusted or unknown origin are blocked
+    effect: block
+    match: {tools: [send_email]}
+    when:
+      all:
+        - {arg_present: attachments}
+        - {destination: external}
+        - {dest_origin_in: [UNTRUSTED_ONLY, UNKNOWN]}
+  - id: AD-WS-SHARE-001
+    description: Sharing a file with an external address the user did not type is confirmed
+    effect: review
+    match: {tools: [share_file]}
+    when:
+      all:
+        - {destination: external}
+        - {dest_origin_not_in: [USER_TYPED, APPROVED]}

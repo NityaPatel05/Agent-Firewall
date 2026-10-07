@@ -1,0 +1,112 @@
+# AgentDojo v1.2.2 banking suite (Appendix G). Tool names/args from the pinned suite (bench.lock).
+# Recipients are `text`: AgentDojo's ground truth also pays named merchants ("Spotify", "Apple").
+# Counterparties, memos and files are attacker-influenced; the user's own IBAN/profile are own records.
+server: local
+tools:
+  get_iban:
+    description: Get the IBAN of the current bank account.
+    side_effect: read
+    groups: [banking, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  get_balance:
+    description: Get the balance of the account.
+    side_effect: read
+    groups: [banking, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  get_user_info:
+    description: Get the user information.
+    side_effect: read
+    groups: [banking, read]
+    args: {}
+    output: {source_trust: own_record, sensitivity: private}
+  get_most_recent_transactions:
+    description: Most recent transactions.
+    side_effect: read
+    groups: [banking, read]
+    args:
+      n: {type: int, role: meta, minimum: 1, maximum: 1000}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [subject]
+      fields: {"[*].id": own_record}
+  get_scheduled_transactions:
+    description: Scheduled transactions.
+    side_effect: read
+    groups: [banking, read]
+    args: {}
+    output:
+      source_trust: untrusted
+      sensitivity: private
+      item_path: "[*]"
+      ref_field: id
+      alias_fields: [subject]
+      fields: {"[*].id": own_record}
+  read_file:
+    description: Reads the contents of the file at the given path.
+    side_effect: read
+    groups: [files, read]
+    ref_arg: file_path
+    args:
+      file_path: {type: path, role: selector, required: true}
+    output: {source_trust: untrusted, sensitivity: private}
+  send_money:
+    description: Sends a transaction to the recipient.
+    side_effect: payment
+    groups: [banking, payment]
+    sink: true
+    destination: {arg: recipient, kind: text}
+    args:
+      recipient: {type: text, role: authority, required: true, max_length: 100}
+      amount: {type: amount, role: bounded, required: true}
+      subject: {type: text, role: content, required: true, max_length: 2000}
+      date: {type: text, role: meta, required: true, max_length: 40}
+    output: {source_trust: own_record, sensitivity: private}
+  schedule_transaction:
+    description: Schedule a transaction.
+    side_effect: payment
+    groups: [banking, payment]
+    sink: true
+    destination: {arg: recipient, kind: text}
+    args:
+      recipient: {type: text, role: authority, required: true, max_length: 100}
+      amount: {type: amount, role: bounded, required: true}
+      subject: {type: text, role: content, required: true, max_length: 2000}
+      date: {type: text, role: meta, required: true, max_length: 40}
+      recurring: {type: bool, role: meta, required: true}
+    output: {source_trust: own_record, sensitivity: private}
+  update_scheduled_transaction:
+    description: Update a scheduled transaction.
+    side_effect: payment
+    groups: [banking, payment]
+    sink: true
+    destination: {arg: recipient, kind: text}
+    args:
+      id: {type: int, role: selector, required: true}
+      recipient: {type: text, role: authority, max_length: 100}
+      amount: {type: amount, role: bounded}
+      subject: {type: text, role: content, max_length: 2000}
+      date: {type: text, role: meta, max_length: 40}
+      recurring: {type: bool, role: meta}
+    output: {source_trust: own_record, sensitivity: private}
+  update_password:
+    description: Update the user password.
+    side_effect: auth
+    groups: [banking, credentials]
+    args:
+      password: {type: secret_text, role: authority, required: true, max_length: 128}
+    output: {source_trust: own_record, sensitivity: private}
+  update_user_info:
+    description: Update the user information.
+    side_effect: write
+    groups: [banking, write, profile]
+    args:
+      first_name: {type: text, role: content, max_length: 100}
+      last_name: {type: text, role: content, max_length: 100}
+      street: {type: text, role: content, max_length: 200}
+      city: {type: text, role: content, max_length: 100}
+    output: {source_trust: own_record, sensitivity: private}

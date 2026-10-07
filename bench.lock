@@ -1,0 +1,4 @@
+agentdojo_git=https://github.com/ethz-spylab/agentdojo
+agentdojo_sha=089ed468cf3ed0322acc66b0211f26d9d90dbf60
+benchmark_version=v1.2.2
+install=.venv/Scripts/python -m pip install "agentdojo @ git+https://github.com/ethz-spylab/agentdojo@089ed468cf3ed0322acc66b0211f26d9d90dbf60"
