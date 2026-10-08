@@ -1,0 +1,1 @@
+{"seconds": 94.6, "passed": 1170, "failed": 0, "skipped": 11, "note": "full offline suite on 2026-11-02 with other workloads running on the laptop; 59.2 s on an idle machine before the M11-M13 tests were added. Opt-in: --run-agentdojo (8 passed), --run-models, --run-live."}
